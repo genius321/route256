@@ -1,6 +1,9 @@
 package addtocart
 
-import "errors"
+import (
+	"errors"
+	"log"
+)
 
 type Handler struct {
 }
@@ -27,5 +30,6 @@ func (r Request) Validate() error {
 }
 
 func (h Handler) Handle(req Request) (Response, error) {
+	log.Printf("%+v", req)
 	return Response{}, nil
 }

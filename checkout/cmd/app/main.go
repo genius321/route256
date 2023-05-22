@@ -13,7 +13,7 @@ const port = ":8080"
 
 func main() {
 
-	model := domain.New(loms.New("http://localhost:8081"))
+	model := domain.New(loms.New("http://loms:8081"))
 
 	hand := &addtocart.Handler{
 		Model: model,

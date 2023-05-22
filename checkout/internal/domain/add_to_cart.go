@@ -18,7 +18,7 @@ func (m *Model) AddToCart(_ int64, sku uint32, count uint16) error {
 	counter := int64(count)
 	for _, stock := range stocks {
 		counter -= int64(stock.Count)
-		if counter == 0 {
+		if counter <= 0 {
 			return nil
 		}
 	}

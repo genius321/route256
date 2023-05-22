@@ -3,7 +3,7 @@ package addtocart
 import (
 	"errors"
 	"log"
-	"route256/checkout/cmd/internal/domain"
+	"route256/checkout/internal/domain"
 )
 
 type Handler struct {

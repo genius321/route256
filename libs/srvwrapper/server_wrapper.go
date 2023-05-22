@@ -6,11 +6,15 @@ import (
 	"net/http"
 )
 
-type Wrapper[Req, Res any] struct {
+type Wrapper[Req Validator, Res any] struct {
 	fn func(req Req) (Res, error)
 }
 
-func New[Req, Res any](fn func(req Req) (Res, error)) *Wrapper[Req, Res] {
+type Validator interface {
+	Validate() error
+}
+
+func New[Req Validator, Res any](fn func(req Req) (Res, error)) *Wrapper[Req, Res] {
 	return &Wrapper[Req, Res]{
 		fn: fn,
 	}
@@ -24,6 +28,23 @@ func (w *Wrapper[Req, Res]) ServeHTTP(resWriter http.ResponseWriter, httpReq *ht
 	if err != nil {
 		resWriter.WriteHeader(http.StatusInternalServerError)
 		writeErrorText(resWriter, "parse request", err)
+		return
+	}
+
+	// reqValidation, ok := any(req).(Validator)
+	// if ok {
+	// 	errValidation := reqValidation.Validate()
+	// 	if errValidation != nil {
+	// 		resWriter.WriteHeader(http.StatusBadRequest)
+	// 		writeErrorText(resWriter, "bad request", errValidation)
+	// 		return
+	// 	}
+	// }
+
+	errValidation := req.Validate()
+	if errValidation != nil {
+		resWriter.WriteHeader(http.StatusBadRequest)
+		writeErrorText(resWriter, "bad request", errValidation)
 		return
 	}
 

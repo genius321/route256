@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-type Wrapper[Req Validator, Res any] struct {
+type Wrapper[Req, Res any] struct {
 	fn func(req Req) (Res, error)
 }
 
@@ -15,7 +15,7 @@ type Validator interface {
 	Validate() error
 }
 
-func New[Req Validator, Res any](fn func(req Req) (Res, error)) *Wrapper[Req, Res] {
+func New[Req, Res any](fn func(req Req) (Res, error)) *Wrapper[Req, Res] {
 	return &Wrapper[Req, Res]{
 		fn: fn,
 	}
@@ -32,21 +32,14 @@ func (w *Wrapper[Req, Res]) ServeHTTP(resWriter http.ResponseWriter, httpReq *ht
 		return
 	}
 
-	// reqValidation, ok := any(req).(Validator)
-	// if ok {
-	// 	errValidation := reqValidation.Validate()
-	// 	if errValidation != nil {
-	// 		resWriter.WriteHeader(http.StatusBadRequest)
-	// 		writeErrorText(resWriter, "bad request", errValidation)
-	// 		return
-	// 	}
-	// }
-
-	errValidation := req.Validate()
-	if errValidation != nil {
-		resWriter.WriteHeader(http.StatusBadRequest)
-		writeErrorText(resWriter, "bad request", errValidation)
-		return
+	reqValidation, ok := any(req).(Validator)
+	if ok {
+		errValidation := reqValidation.Validate()
+		if errValidation != nil {
+			resWriter.WriteHeader(http.StatusBadRequest)
+			writeErrorText(resWriter, "bad request", errValidation)
+			return
+		}
 	}
 
 	resp, err := w.fn(req)

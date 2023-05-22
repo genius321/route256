@@ -31,7 +31,6 @@ type StocksResponse struct {
 func New(clientUrl string) *Client {
 	stockUrl, _ := url.JoinPath(clientUrl, StocksPath)
 	return &Client{pathStock: stockUrl}
-	// return &Client{pathStock: fmt.Sprintf("%s/%s", clientUrl, StocksPath)}
 }
 
 func (c *Client) Stocks(sku uint32) ([]domain.Stock, error) {

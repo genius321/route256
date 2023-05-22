@@ -2,11 +2,13 @@ package loms
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"route256/checkout/internal/domain"
+	"time"
 )
 
 const (
@@ -34,7 +36,7 @@ func New(clientUrl string) *Client {
 	// return &Client{pathStock: fmt.Sprintf("%s/%s", clientUrl, StocksPath)}
 }
 
-func (c *Client) Stocks(sku uint32) ([]domain.Stock, error) {
+func (c *Client) Stocks(ctx context.Context, sku uint32) ([]domain.Stock, error) {
 	requestStocks := StocksRequest{SKU: sku}
 
 	rawData, err := json.Marshal(&requestStocks)
@@ -42,7 +44,10 @@ func (c *Client) Stocks(sku uint32) ([]domain.Stock, error) {
 		return nil, fmt.Errorf("encode stock request: %w", err)
 	}
 
-	httpRequest, err := http.NewRequest(http.MethodPost, c.pathStock, bytes.NewBuffer(rawData))
+	ctx, fnCancel := context.WithTimeout(ctx, 5*time.Second)
+	defer fnCancel()
+
+	httpRequest, err := http.NewRequestWithContext(ctx, http.MethodPost, c.pathStock, bytes.NewBuffer(rawData))
 	if err != nil {
 		return nil, fmt.Errorf("prepare stock request: %w", err)
 	}

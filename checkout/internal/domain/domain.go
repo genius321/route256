@@ -1,7 +1,9 @@
 package domain
 
+import "context"
+
 type StockChecker interface {
-	Stocks(sku uint32) ([]Stock, error)
+	Stocks(ctx context.Context, sku uint32) ([]Stock, error)
 }
 
 type Stock struct {

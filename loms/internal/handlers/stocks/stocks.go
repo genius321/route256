@@ -1,7 +1,9 @@
 package stocks
 
 import (
+	"context"
 	"log"
+	"time"
 )
 
 type Handler struct {
@@ -24,8 +26,17 @@ func (r Request) Validate() error {
 	return nil
 }
 
-func (h *Handler) Handle(req Request) (Response, error) {
+func (h *Handler) Handle(ctx context.Context, req Request) (Response, error) {
 	log.Printf("%+v", req)
+	timer := time.NewTimer(10 * time.Second)
+	defer timer.Stop()
+
+	select {
+	case <-timer.C:
+	case <-ctx.Done():
+		log.Println(ctx.Err())
+		return Response{}, ctx.Err()
+	}
 	return Response{
 		Stocks: []StockItem{
 			{WarehouseID: 1, Count: 200},

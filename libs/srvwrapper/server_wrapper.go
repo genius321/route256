@@ -2,19 +2,21 @@ package srvwrapper
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 )
 
 type Wrapper[Req Validator, Res any] struct {
-	fn func(req Req) (Res, error)
+	fn func(ctx context.Context, req Req) (Res, error)
 }
 
 type Validator interface {
 	Validate() error
 }
 
-func New[Req Validator, Res any](fn func(req Req) (Res, error)) *Wrapper[Req, Res] {
+func New[Req Validator, Res any](fn func(ctx context.Context, req Req) (Res, error)) *Wrapper[Req, Res] {
 	return &Wrapper[Req, Res]{
 		fn: fn,
 	}
@@ -48,8 +50,9 @@ func (w *Wrapper[Req, Res]) ServeHTTP(resWriter http.ResponseWriter, httpReq *ht
 		return
 	}
 
-	resp, err := w.fn(req)
+	resp, err := w.fn(httpReq.Context(), req)
 	if err != nil {
+		log.Printf("executor fail: %s", err)
 		resWriter.WriteHeader(http.StatusInternalServerError)
 		writeErrorText(resWriter, "exec handler", err)
 		return

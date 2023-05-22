@@ -1,7 +1,6 @@
 package addtocart
 
 import (
-	"context"
 	"errors"
 	"log"
 	"route256/checkout/internal/domain"
@@ -32,8 +31,8 @@ func (r Request) Validate() error {
 	return nil
 }
 
-func (h Handler) Handle(ctx context.Context, req Request) (Response, error) {
+func (h Handler) Handle(req Request) (Response, error) {
 	log.Printf("%+v", req)
-	err := h.Model.AddToCart(ctx, req.User, req.SKU, req.Count)
+	err := h.Model.AddToCart(req.User, req.SKU, req.Count)
 	return Response{}, err
 }

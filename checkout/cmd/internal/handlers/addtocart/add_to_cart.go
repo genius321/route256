@@ -3,9 +3,11 @@ package addtocart
 import (
 	"errors"
 	"log"
+	"route256/checkout/cmd/internal/domain"
 )
 
 type Handler struct {
+	Model *domain.Model
 }
 
 type Response struct {
@@ -31,5 +33,6 @@ func (r Request) Validate() error {
 
 func (h Handler) Handle(req Request) (Response, error) {
 	log.Printf("%+v", req)
-	return Response{}, nil
+	err := h.Model.AddToCart(req.User, req.SKU, req.Count)
+	return Response{}, err
 }

@@ -20,10 +20,6 @@ type Request struct {
 	SKU uint32 `json:"sku"`
 }
 
-func (r Request) Validate() error {
-	return nil
-}
-
 func (h *Handler) Handle(req Request) (Response, error) {
 	log.Printf("%+v", req)
 	return Response{

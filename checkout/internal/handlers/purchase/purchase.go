@@ -1,11 +1,12 @@
 package purchase
 
 import (
-	"errors"
 	"log"
+	"route256/checkout/internal/domain"
 )
 
 type Handler struct {
+	Model *domain.ModelOrderCreater
 }
 
 type Response struct {
@@ -16,19 +17,8 @@ type Request struct {
 	User int64 `json:"user"`
 }
 
-var (
-	ErrUserNotFound = errors.New("user not found")
-)
-
-func (r Request) Validate() error {
-	if r.User == 0 {
-		return ErrUserNotFound
-	}
-
-	return nil
-}
-
 func (h Handler) Handle(req Request) (Response, error) {
 	log.Printf("%+v", req)
-	return Response{}, nil
+	err := h.Model.Purchase(req.User)
+	return Response{OrderID: 17}, err
 }

@@ -24,7 +24,8 @@ func (h *Handler) Handle(req Request) (Response, error) {
 	log.Printf("%+v", req)
 	return Response{
 		Stocks: []StockItem{
-			{WarehouseID: 1, Count: 200},
+			{WarehouseID: 1, Count: 150},
+			{WarehouseID: 2, Count: 50},
 		},
 	}, nil
 }

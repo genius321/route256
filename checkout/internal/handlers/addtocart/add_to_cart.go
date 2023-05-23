@@ -7,7 +7,7 @@ import (
 )
 
 type Handler struct {
-	Model *domain.Model
+	Model *domain.ModelStockChecker
 }
 
 type Response struct {

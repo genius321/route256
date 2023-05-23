@@ -6,11 +6,23 @@ import (
 	"log"
 )
 
+type StockChecker interface {
+	Stocks(sku uint32) ([]Stock, error)
+}
+
+type ModelStockChecker struct {
+	stockChecker StockChecker
+}
+
+func NewModelStockChecker(stockChecker StockChecker) *ModelStockChecker {
+	return &ModelStockChecker{stockChecker: stockChecker}
+}
+
 var (
 	ErrStockInsufficient = errors.New("stock insufficient")
 )
 
-func (m *Model) AddToCart(_ int64, sku uint32, count uint16) error {
+func (m *ModelStockChecker) AddToCart(_ int64, sku uint32, count uint16) error {
 	stocks, err := m.stockChecker.Stocks(sku)
 	if err != nil {
 		return fmt.Errorf("get stocks: %w", err)

@@ -13,10 +13,6 @@ const (
 	StocksPath = "stocks"
 )
 
-type Client struct {
-	pathStock string
-}
-
 type StocksRequest struct {
 	SKU uint32 `json:"sku"`
 }
@@ -28,12 +24,16 @@ type StocksResponse struct {
 	} `json:"stocks"`
 }
 
-func New(clientUrl string) *Client {
-	stockUrl, _ := url.JoinPath(clientUrl, StocksPath)
-	return &Client{pathStock: stockUrl}
+type ClientStocks struct {
+	pathStock string
 }
 
-func (c *Client) Stocks(sku uint32) ([]domain.Stock, error) {
+func NewClientStocks(clientUrl string) *ClientStocks {
+	stockUrl, _ := url.JoinPath(clientUrl, StocksPath)
+	return &ClientStocks{pathStock: stockUrl}
+}
+
+func (c *ClientStocks) Stocks(sku uint32) ([]domain.Stock, error) {
 	requestStocks := StocksRequest{SKU: sku}
 
 	rawData, err := json.Marshal(&requestStocks)

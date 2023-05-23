@@ -6,6 +6,7 @@ import (
 	"route256/libs/srvwrapper"
 	"route256/loms/internal/handlers/createorder"
 	"route256/loms/internal/handlers/listorder"
+	"route256/loms/internal/handlers/orderpayed"
 	"route256/loms/internal/handlers/stocks"
 )
 
@@ -17,6 +18,9 @@ func main() {
 
 	listorder := &listorder.Handler{}
 	http.Handle("/listOrder", srvwrapper.New(listorder.Handle))
+
+	orderpayed := &orderpayed.Handler{}
+	http.Handle("/orderPayed", srvwrapper.New(orderpayed.Handle))
 
 	stocks := &stocks.Handler{}
 	http.Handle("/stocks", srvwrapper.New(stocks.Handle))

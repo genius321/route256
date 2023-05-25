@@ -34,9 +34,7 @@ func NewClientStocks(clientUrl string) *ClientStocks {
 }
 
 func (c *ClientStocks) Stocks(sku uint32) ([]domain.Stock, error) {
-	requestStocks := StocksRequest{SKU: sku}
-
-	rawData, err := json.Marshal(&requestStocks)
+	rawData, err := json.Marshal(&StocksRequest{SKU: sku})
 	if err != nil {
 		return nil, fmt.Errorf("encode stock request: %w", err)
 	}

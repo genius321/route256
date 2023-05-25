@@ -31,6 +31,6 @@ func main() {
 
 	err := http.ListenAndServe(port, nil)
 	if err != nil {
-		log.Fatalln("ERR: ", err)
+		log.Fatalln("ERR main ListenAndServe:", err)
 	}
 }

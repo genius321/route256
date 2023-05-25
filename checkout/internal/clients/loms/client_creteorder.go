@@ -32,9 +32,7 @@ func NewClientCreateOrder(clientUrl string) *ClientCreateOrder {
 }
 
 func (c *ClientCreateOrder) CreateOrder(user int64, items []domain.Item) (int64, error) {
-	requestCreateOrder := CreateOrderRequest{User: user, Items: items}
-
-	rawData, err := json.Marshal(&requestCreateOrder)
+	rawData, err := json.Marshal(&CreateOrderRequest{User: user, Items: items})
 	if err != nil {
 		return 0, fmt.Errorf("encode createorder request: %w", err)
 	}
@@ -60,7 +58,5 @@ func (c *ClientCreateOrder) CreateOrder(user int64, items []domain.Item) (int64,
 		return 0, fmt.Errorf("decode createorder request: %w", err)
 	}
 
-	result := responseCreateOrder.OrderID
-
-	return result, nil
+	return responseCreateOrder.OrderID, nil
 }

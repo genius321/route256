@@ -20,7 +20,7 @@ func main() {
 
 	err := config.Init()
 	if err != nil {
-		log.Fatalln("ERR: ", err)
+		log.Fatalln("ERR main config.Init:", err)
 	}
 
 	modelStockChecker := domain.NewModelStockChecker(loms.NewClientStocks(config.AppConfig.Services.Loms))
@@ -46,5 +46,5 @@ func main() {
 	http.Handle("/purchase", srvwrapper.New(purchase.Handle))
 
 	err = http.ListenAndServe(port, nil)
-	log.Fatalln("ERR: ", err)
+	log.Fatalln("ERR main ListenAndServe:", err)
 }

@@ -33,10 +33,9 @@ func NewClientGetProduct(clientUrl string) *ClientGetProduct {
 }
 
 func (c *ClientGetProduct) GetProduct(token string, sku int64) (domain.Product, error) {
-	requestGetProduct := GetProductRequest{Token: token, SKU: sku}
 	var result domain.Product
 
-	rawData, err := json.Marshal(requestGetProduct)
+	rawData, err := json.Marshal(&GetProductRequest{Token: token, SKU: sku})
 	if err != nil {
 		return result, fmt.Errorf("encode getproduct request: %w", err)
 	}
@@ -64,7 +63,5 @@ func (c *ClientGetProduct) GetProduct(token string, sku int64) (domain.Product, 
 		return result, fmt.Errorf("decode getproduct request: %w", err)
 	}
 
-	result = domain.Product{Name: responseGetProduct.Name, Price: uint32(responseGetProduct.Price)}
-
-	return result, nil
+	return domain.Product{Name: responseGetProduct.Name, Price: uint32(responseGetProduct.Price)}, nil
 }

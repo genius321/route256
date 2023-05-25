@@ -63,5 +63,8 @@ func (c *ClientGetProduct) GetProduct(token string, sku int64) (domain.Product, 
 		return result, fmt.Errorf("decode getproduct request: %w", err)
 	}
 
-	return domain.Product{Name: responseGetProduct.Name, Price: uint32(responseGetProduct.Price)}, nil
+	return domain.Product{
+		Name:  responseGetProduct.Name,
+		Price: uint32(responseGetProduct.Price),
+	}, nil
 }

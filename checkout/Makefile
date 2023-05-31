@@ -102,4 +102,13 @@ generate-checkout: bin vendor-proto/google/api vendor-proto/google/protobuf
 	--validate_out="lang=go,paths=source_relative:internal/pkg/checkout" \
 	api/checkout/checkout.proto
 
-generate: generate-loms generate-checkout
+generate-product: bin vendor-proto/google/api vendor-proto/google/protobuf
+	mkdir -p internal/pkg/product
+	$(PROTOC) -I api/product-service -I vendor-proto \
+	--go_out internal/pkg/product --go_opt paths=source_relative \
+	--go-grpc_out internal/pkg/product --go-grpc_opt paths=source_relative \
+	--grpc-gateway_out internal/pkg/product --grpc-gateway_opt paths=source_relative \
+	--validate_out="lang=go,paths=source_relative:internal/pkg/product" \
+	api/product-service/product-service.proto
+
+generate: generate-loms generate-checkout generate-product

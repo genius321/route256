@@ -91,7 +91,7 @@ generate-loms: bin vendor-proto/google/api vendor-proto/google/protobuf
 	--go-grpc_out internal/pkg/loms --go-grpc_opt paths=source_relative \
 	--grpc-gateway_out internal/pkg/loms --grpc-gateway_opt paths=source_relative \
 	--validate_out="lang=go,paths=source_relative:internal/pkg/loms" \
-	api/loms/service.proto
+	api/loms/loms.proto
 
 generate-checkout: bin vendor-proto/google/api vendor-proto/google/protobuf
 	mkdir -p internal/pkg/checkout
@@ -100,6 +100,6 @@ generate-checkout: bin vendor-proto/google/api vendor-proto/google/protobuf
 	--go-grpc_out internal/pkg/checkout --go-grpc_opt paths=source_relative \
 	--grpc-gateway_out internal/pkg/checkout --grpc-gateway_opt paths=source_relative \
 	--validate_out="lang=go,paths=source_relative:internal/pkg/checkout" \
-	api/checkout/service.proto
+	api/checkout/checkout.proto
 
 generate: generate-loms generate-checkout

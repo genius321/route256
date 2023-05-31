@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v4.23.1
-// source: service.proto
+// source: loms.proto
 
 package loms
 
@@ -105,5 +105,5 @@ var Loms_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "service.proto",
+	Metadata: "loms.proto",
 }

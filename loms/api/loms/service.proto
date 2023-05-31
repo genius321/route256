@@ -4,8 +4,14 @@ package loms;
 
 option go_package = "https://gitlab.ozon.dev/genius4666/homework/loms/internal/pkg/loms";
 
+import "google/protobuf/empty.proto";
+
 service Loms {
     rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
+    rpc ListOrder(ListOrderRequest) returns (ListOrderResponse);
+    rpc OrderPayed(OrderPayedRequest) returns (google.protobuf.Empty);
+    rpc CancelOrder(CancelOrderRequest) returns (google.protobuf.Empty);
+    rpc Stocks(StocksRequest) returns (StocksResponse);
 }
 
 message CreateOrderRequest {
@@ -20,4 +26,36 @@ message Item {
 
 message CreateOrderResponse {
     int64 order_id = 1;
+}
+
+message ListOrderRequest {
+    int64 order_id = 1;
+}
+
+message ListOrderResponse {
+    string status = 1;
+    int64 user = 2;
+    repeated Item items = 3;
+}
+
+message OrderPayedRequest {
+    int64 order_id = 1;
+}
+
+message CancelOrderRequest {
+    int64 order_id = 1;
+}
+
+message StocksRequest {
+    uint32 sku = 1;
+
+}
+
+message StocksResponse {
+    repeated Stock stocks = 1;
+}
+
+message Stock {
+    int64 warehouse_id = 1;
+    uint64 count = 2;
 }

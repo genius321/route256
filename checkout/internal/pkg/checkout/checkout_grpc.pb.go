@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -19,13 +20,19 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Checkout_Purchase_FullMethodName = "/checkout.Checkout/Purchase"
+	Checkout_AddToCart_FullMethodName      = "/checkout.Checkout/AddToCart"
+	Checkout_DeleteFromCart_FullMethodName = "/checkout.Checkout/DeleteFromCart"
+	Checkout_ListCart_FullMethodName       = "/checkout.Checkout/ListCart"
+	Checkout_Purchase_FullMethodName       = "/checkout.Checkout/Purchase"
 )
 
 // CheckoutClient is the client API for Checkout service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CheckoutClient interface {
+	AddToCart(ctx context.Context, in *AddToCartRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	DeleteFromCart(ctx context.Context, in *DeleteFromCartRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ListCart(ctx context.Context, in *ListCartRequest, opts ...grpc.CallOption) (*ListCartResponse, error)
 	Purchase(ctx context.Context, in *PurchaseRequest, opts ...grpc.CallOption) (*PurchaseResponse, error)
 }
 
@@ -35,6 +42,33 @@ type checkoutClient struct {
 
 func NewCheckoutClient(cc grpc.ClientConnInterface) CheckoutClient {
 	return &checkoutClient{cc}
+}
+
+func (c *checkoutClient) AddToCart(ctx context.Context, in *AddToCartRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, Checkout_AddToCart_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *checkoutClient) DeleteFromCart(ctx context.Context, in *DeleteFromCartRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, Checkout_DeleteFromCart_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *checkoutClient) ListCart(ctx context.Context, in *ListCartRequest, opts ...grpc.CallOption) (*ListCartResponse, error) {
+	out := new(ListCartResponse)
+	err := c.cc.Invoke(ctx, Checkout_ListCart_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *checkoutClient) Purchase(ctx context.Context, in *PurchaseRequest, opts ...grpc.CallOption) (*PurchaseResponse, error) {
@@ -50,6 +84,9 @@ func (c *checkoutClient) Purchase(ctx context.Context, in *PurchaseRequest, opts
 // All implementations must embed UnimplementedCheckoutServer
 // for forward compatibility
 type CheckoutServer interface {
+	AddToCart(context.Context, *AddToCartRequest) (*emptypb.Empty, error)
+	DeleteFromCart(context.Context, *DeleteFromCartRequest) (*emptypb.Empty, error)
+	ListCart(context.Context, *ListCartRequest) (*ListCartResponse, error)
 	Purchase(context.Context, *PurchaseRequest) (*PurchaseResponse, error)
 	mustEmbedUnimplementedCheckoutServer()
 }
@@ -58,6 +95,15 @@ type CheckoutServer interface {
 type UnimplementedCheckoutServer struct {
 }
 
+func (UnimplementedCheckoutServer) AddToCart(context.Context, *AddToCartRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddToCart not implemented")
+}
+func (UnimplementedCheckoutServer) DeleteFromCart(context.Context, *DeleteFromCartRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteFromCart not implemented")
+}
+func (UnimplementedCheckoutServer) ListCart(context.Context, *ListCartRequest) (*ListCartResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListCart not implemented")
+}
 func (UnimplementedCheckoutServer) Purchase(context.Context, *PurchaseRequest) (*PurchaseResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Purchase not implemented")
 }
@@ -72,6 +118,60 @@ type UnsafeCheckoutServer interface {
 
 func RegisterCheckoutServer(s grpc.ServiceRegistrar, srv CheckoutServer) {
 	s.RegisterService(&Checkout_ServiceDesc, srv)
+}
+
+func _Checkout_AddToCart_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddToCartRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CheckoutServer).AddToCart(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Checkout_AddToCart_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CheckoutServer).AddToCart(ctx, req.(*AddToCartRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Checkout_DeleteFromCart_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteFromCartRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CheckoutServer).DeleteFromCart(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Checkout_DeleteFromCart_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CheckoutServer).DeleteFromCart(ctx, req.(*DeleteFromCartRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Checkout_ListCart_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCartRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CheckoutServer).ListCart(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Checkout_ListCart_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CheckoutServer).ListCart(ctx, req.(*ListCartRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Checkout_Purchase_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -99,6 +199,18 @@ var Checkout_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "checkout.Checkout",
 	HandlerType: (*CheckoutServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "AddToCart",
+			Handler:    _Checkout_AddToCart_Handler,
+		},
+		{
+			MethodName: "DeleteFromCart",
+			Handler:    _Checkout_DeleteFromCart_Handler,
+		},
+		{
+			MethodName: "ListCart",
+			Handler:    _Checkout_ListCart_Handler,
+		},
 		{
 			MethodName: "Purchase",
 			Handler:    _Checkout_Purchase_Handler,

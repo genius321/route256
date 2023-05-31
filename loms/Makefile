@@ -91,3 +91,5 @@ generate-loms: bin vendor-proto/google/api vendor-proto/google/protobuf
 	--grpc-gateway_out internal/pkg/loms --grpc-gateway_opt paths=source_relative \
 	--validate_out="lang=go,paths=source_relative:internal/pkg/loms" \
 	api/loms/service.proto
+
+generate: generate-loms

@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package checkout;
+
+option go_package = "https://gitlab.ozon.dev/genius4666/homework/checkout/internal/pkg/checkout";
+
+service Checkout {
+    rpc Purchase(PurchaseRequest) returns (PurchaseResponse);
+}
+
+message PurchaseRequest {
+    int64 user = 1;
+}
+
+message PurchaseResponse {
+    int64 order_id = 1;
+}

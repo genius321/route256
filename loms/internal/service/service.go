@@ -6,15 +6,15 @@ import (
 	"route256/loms/internal/pkg/loms"
 )
 
-type Service struct {
+type service struct {
 	loms.UnimplementedLomsServer
 }
 
-func (s *Service) CreateOrder(ctx context.Context, req *loms.CreateOrderRequest) (*loms.CreateOrderResponse, error) {
+func (s *service) CreateOrder(ctx context.Context, req *loms.CreateOrderRequest) (*loms.CreateOrderResponse, error) {
 	log.Printf("%+v", req)
 	return &loms.CreateOrderResponse{OrderId: 666}, nil
 }
 
-func NewLomsServer() *Service {
-	return &Service{}
+func NewLomsServer() *service {
+	return &service{}
 }

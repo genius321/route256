@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package loms;
+
+option go_package = "https://gitlab.ozon.dev/genius4666/homework/loms/internal/pkg/loms";
+
+service Loms {
+    rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
+}
+
+message CreateOrderRequest {
+    int64 user = 1;
+    repeated Item items = 2;
+}
+
+message Item {
+    uint32 sku = 1;
+    uint32 count = 2;
+}
+
+message CreateOrderResponse {
+    int64 order_id = 1;
+}

@@ -19,8 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	ProductService_GetProduct_FullMethodName = "/product.ProductService/GetProduct"
-	ProductService_ListSkus_FullMethodName   = "/product.ProductService/ListSkus"
+	ProductService_GetProduct_FullMethodName = "/route256.product.ProductService/GetProduct"
+	ProductService_ListSkus_FullMethodName   = "/route256.product.ProductService/ListSkus"
 )
 
 // ProductServiceClient is the client API for ProductService service.
@@ -129,7 +129,7 @@ func _ProductService_ListSkus_Handler(srv interface{}, ctx context.Context, dec 
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var ProductService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "product.ProductService",
+	ServiceName: "route256.product.ProductService",
 	HandlerType: (*ProductServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

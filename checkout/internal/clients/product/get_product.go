@@ -3,7 +3,7 @@ package product
 import (
 	"context"
 	"log"
-	"route256/checkout/internal/pkg/product"
+	"route256/checkout/internal/pkg/product-service"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

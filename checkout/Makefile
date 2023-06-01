@@ -86,29 +86,29 @@ vendor-proto/validate:
 
 generate-loms: bin vendor-proto/google/api vendor-proto/google/protobuf
 	mkdir -p internal/pkg/loms
-	$(PROTOC) -I api/loms -I vendor-proto \
+	$(PROTOC) -I api -I vendor-proto \
 	--go_out internal/pkg/loms --go_opt paths=source_relative \
 	--go-grpc_out internal/pkg/loms --go-grpc_opt paths=source_relative \
 	--grpc-gateway_out internal/pkg/loms --grpc-gateway_opt paths=source_relative \
 	--validate_out="lang=go,paths=source_relative:internal/pkg/loms" \
-	api/loms/loms.proto
+	api/loms.proto
 
 generate-checkout: bin vendor-proto/google/api vendor-proto/google/protobuf
 	mkdir -p internal/pkg/checkout
-	$(PROTOC) -I api/checkout -I vendor-proto \
+	$(PROTOC) -I api -I vendor-proto \
 	--go_out internal/pkg/checkout --go_opt paths=source_relative \
 	--go-grpc_out internal/pkg/checkout --go-grpc_opt paths=source_relative \
 	--grpc-gateway_out internal/pkg/checkout --grpc-gateway_opt paths=source_relative \
 	--validate_out="lang=go,paths=source_relative:internal/pkg/checkout" \
-	api/checkout/checkout.proto
+	api/checkout.proto
 
-generate-product: bin vendor-proto/google/api vendor-proto/google/protobuf
-	mkdir -p internal/pkg/product
-	$(PROTOC) -I api/product-service -I vendor-proto \
-	--go_out internal/pkg/product --go_opt paths=source_relative \
-	--go-grpc_out internal/pkg/product --go-grpc_opt paths=source_relative \
-	--grpc-gateway_out internal/pkg/product --grpc-gateway_opt paths=source_relative \
-	--validate_out="lang=go,paths=source_relative:internal/pkg/product" \
-	api/product-service/product-service.proto
+generate-product-service: bin vendor-proto/google/api vendor-proto/google/protobuf
+	mkdir -p internal/pkg/product-service
+	$(PROTOC) -I api -I vendor-proto \
+	--go_out internal/pkg/product-service --go_opt paths=source_relative \
+	--go-grpc_out internal/pkg/product-service --go-grpc_opt paths=source_relative \
+	--grpc-gateway_out internal/pkg/product-service --grpc-gateway_opt paths=source_relative \
+	--validate_out="lang=go,paths=source_relative:internal/pkg/product-service" \
+	api/product-service.proto
 
-generate: generate-loms generate-checkout generate-product
+generate: generate-loms generate-checkout generate-product-service

@@ -2,11 +2,14 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"route256/checkout/internal/clients/loms"
 	"route256/checkout/internal/clients/product"
 	"route256/checkout/internal/pkg/checkout"
+
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type service struct {
@@ -15,6 +18,23 @@ type service struct {
 
 func NewCheckoutServer() *service {
 	return &service{}
+}
+
+func (s *service) AddToCart(ctx context.Context, req *checkout.AddToCartRequest) (*emptypb.Empty, error) {
+	log.Printf("%+v", req)
+	stocksResp, _ := loms.Stocks(ctx, req.Sku)
+	stocks := stocksResp.Stocks
+	log.Printf("stocks: %v", stocks)
+
+	counter := int64(req.Count)
+
+	for _, stock := range stocks {
+		counter -= int64(stock.Count)
+		if counter <= 0 {
+			return &emptypb.Empty{}, nil
+		}
+	}
+	return &emptypb.Empty{}, errors.New("stock insufficient")
 }
 
 func (s *service) ListCart(ctx context.Context, req *checkout.ListCartRequest) (*checkout.ListCartResponse, error) {

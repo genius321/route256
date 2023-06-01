@@ -85,11 +85,11 @@ vendor-proto/validate:
 
 generate-loms: bin vendor-proto/google/api vendor-proto/google/protobuf
 	mkdir -p internal/pkg/loms
-	$(PROTOC) -I api/loms -I vendor-proto \
+	$(PROTOC) -I api -I vendor-proto \
 	--go_out internal/pkg/loms --go_opt paths=source_relative \
 	--go-grpc_out internal/pkg/loms --go-grpc_opt paths=source_relative \
 	--grpc-gateway_out internal/pkg/loms --grpc-gateway_opt paths=source_relative \
 	--validate_out="lang=go,paths=source_relative:internal/pkg/loms" \
-	api/loms/service.proto
+	api/loms.proto
 
 generate: generate-loms

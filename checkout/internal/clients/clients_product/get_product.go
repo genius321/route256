@@ -1,4 +1,4 @@
-package product
+package clients_product
 
 import (
 	"context"
@@ -9,12 +9,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-const (
-	addressProduct = "route256.pavl.uk:8082"
-	token          = "testtoken"
-)
-
-func GetProduct(ctx context.Context, sku uint32) (*product.GetProductResponse, error) {
+func GetProduct(ctx context.Context, req *product.GetProductRequest) (*product.GetProductResponse, error) {
 	conn, err := grpc.Dial(addressProduct, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("failed to connect to server: %v", err)
@@ -23,13 +18,5 @@ func GetProduct(ctx context.Context, sku uint32) (*product.GetProductResponse, e
 
 	c := product.NewProductServiceClient(conn)
 
-	log.Println(token)
-	log.Println(sku)
-	product, err := c.GetProduct(ctx, &product.GetProductRequest{
-		Token: token,
-		Sku:   sku,
-	})
-	log.Println(product)
-	log.Println(err)
-	return product, err
+	return c.GetProduct(ctx, req)
 }

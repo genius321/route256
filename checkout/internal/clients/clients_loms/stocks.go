@@ -1,4 +1,4 @@
-package loms
+package clients_loms
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-func Stocks(ctx context.Context, sku uint32) (*loms.StocksResponse, error) {
+func Stocks(ctx context.Context, req *loms.StocksRequest) (*loms.StocksResponse, error) {
 	conn, err := grpc.Dial(addressLoms, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("failed to connect to server: %v", err)
@@ -18,7 +18,5 @@ func Stocks(ctx context.Context, sku uint32) (*loms.StocksResponse, error) {
 
 	c := loms.NewLomsClient(conn)
 
-	return c.Stocks(ctx, &loms.StocksRequest{
-		Sku: sku,
-	})
+	return c.Stocks(ctx, req)
 }

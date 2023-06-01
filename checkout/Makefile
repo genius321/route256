@@ -111,4 +111,7 @@ generate-product-service: bin vendor-proto/google/api vendor-proto/google/protob
 	--validate_out="lang=go,paths=source_relative:internal/pkg/product-service" \
 	api/product-service.proto
 
-generate: generate-loms generate-checkout generate-product-service
+clean:
+	rm -rf internal/pkg
+
+generate: clean generate-loms generate-checkout generate-product-service

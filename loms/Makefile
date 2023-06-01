@@ -92,4 +92,7 @@ generate-loms: bin vendor-proto/google/api vendor-proto/google/protobuf
 	--validate_out="lang=go,paths=source_relative:internal/pkg/loms" \
 	api/loms.proto
 
-generate: generate-loms
+clean:
+	rm -rf internal/pkg
+
+generate: clean generate-loms

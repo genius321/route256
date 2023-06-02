@@ -5,8 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"route256/checkout/internal/clients/clients_loms"
-	"route256/checkout/internal/clients/clients_product"
+	"route256/checkout/internal/config"
 	"route256/checkout/internal/pkg/checkout"
 	"route256/checkout/internal/pkg/loms"
 	"route256/checkout/internal/pkg/product-service"
@@ -16,15 +15,21 @@ import (
 
 type service struct {
 	checkout.UnimplementedCheckoutServer
+	lomsClient    loms.LomsClient
+	productClient product.ProductServiceClient
 }
 
-func NewCheckoutServer() *service {
-	return &service{}
+func NewCheckoutServer(lomsClient loms.LomsClient,
+	productClient product.ProductServiceClient) *service {
+	return &service{
+		lomsClient:    lomsClient,
+		productClient: productClient,
+	}
 }
 
 func (s *service) AddToCart(ctx context.Context, req *checkout.AddToCartRequest) (*emptypb.Empty, error) {
 	log.Printf("%+v", req)
-	stocksResp, _ := clients_loms.Stocks(ctx, &loms.StocksRequest{Sku: req.Sku})
+	stocksResp, _ := s.lomsClient.Stocks(ctx, &loms.StocksRequest{Sku: req.Sku})
 	stocks := stocksResp.Stocks
 	log.Printf("stocks: %v", stocks)
 	counter := int64(req.Count)
@@ -52,8 +57,8 @@ func (s *service) ListCart(ctx context.Context, req *checkout.ListCartRequest) (
 	respItems := make([]*checkout.Item, len(items))
 	var totalPrice uint32
 	for i, v := range items {
-		product, err := clients_product.GetProduct(ctx, &product.GetProductRequest{
-			Token: clients_product.Token,
+		product, err := s.productClient.GetProduct(ctx, &product.GetProductRequest{
+			Token: config.Token,
 			Sku:   v.sku,
 		})
 		if err != nil {
@@ -73,7 +78,7 @@ func (s *service) ListCart(ctx context.Context, req *checkout.ListCartRequest) (
 
 func (s *service) Purchase(ctx context.Context, req *checkout.PurchaseRequest) (*checkout.PurchaseResponse, error) {
 	log.Printf("%+v", req)
-	createOrderResp, err := clients_loms.CreateOrder(ctx, &loms.CreateOrderRequest{
+	createOrderResp, err := s.lomsClient.CreateOrder(ctx, &loms.CreateOrderRequest{
 		User: req.User,
 		Items: []*loms.Item{
 			{Sku: 4487693, Count: 15},

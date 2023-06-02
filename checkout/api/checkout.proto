@@ -6,6 +6,7 @@ option go_package = "https://gitlab.ozon.dev/genius4666/homework/checkout/intern
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
+import "validate/validate.proto";
 
 service Checkout {
     rpc AddToCart(AddToCartRequest) returns (google.protobuf.Empty){
@@ -35,37 +36,37 @@ service Checkout {
 }
 
 message AddToCartRequest {
-    int64 user = 1;
-    uint32 sku = 2;
-    uint32 count = 3;
+    int64 user = 1 [(validate.rules).int64 = {gte: 1,  lte: 9223372036854775807}];
+    uint32 sku = 2 [(validate.rules).uint32 = {gte: 1,  lte: 4294967295}];
+    uint32 count = 3 [(validate.rules).uint32 = {gte: 1,  lte: 65535}];
 }
 
 message DeleteFromCartRequest {
-    int64 user = 1;
-    uint32 sku = 2;
-    uint32 count = 3;
+    int64 user = 1 [(validate.rules).int64 = {gte: 1,  lte: 9223372036854775807}];
+    uint32 sku = 2 [(validate.rules).uint32 = {gte: 1,  lte: 4294967295}];
+    uint32 count = 3 [(validate.rules).uint32 = {gte: 1,  lte: 65535}];
 }
 
 message ListCartRequest {
-    int64 user = 1;
+    int64 user = 1 [(validate.rules).int64 = {gte: 1,  lte: 9223372036854775807}];
 }
 
 message ListCartResponse {
     repeated Item items = 1;
-    uint32 total_price = 2;
+    uint32 total_price = 2 [(validate.rules).uint32 = {gte: 1,  lte: 4294967295}];
 }
 
 message Item {
-    uint32 sku = 1;
-    uint32 count = 2;
-    string name = 3;
-    uint32 price = 4;
+    uint32 sku = 1 [(validate.rules).uint32 = {gte: 1,  lte: 4294967295}];
+    uint32 count = 2 [(validate.rules).uint32 = {gte: 1,  lte: 65535}];
+    string name = 3[(validate.rules).string = {min_len: 1}];
+    uint32 price = 4 [(validate.rules).uint32 = {gte: 1,  lte: 4294967295}];
 }
 
 message PurchaseRequest {
-    int64 user = 1;
+    int64 user = 1 [(validate.rules).int64 = {gte: 1,  lte: 9223372036854775807}];
 }
 
 message PurchaseResponse {
-    int64 order_id = 1;
+    int64 order_id = 1 [(validate.rules).int64 = {gte: 1,  lte: 9223372036854775807}];
 }

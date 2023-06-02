@@ -3,6 +3,7 @@ module route256/checkout
 go 1.19
 
 require (
+	github.com/envoyproxy/protoc-gen-validate v0.10.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.16.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20230530153820-e85fd2cbaebc
 	google.golang.org/grpc v1.55.0

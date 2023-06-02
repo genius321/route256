@@ -57,11 +57,38 @@ func (m *AddToCartRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for User
+	if val := m.GetUser(); val < 1 || val > 9223372036854775807 {
+		err := AddToCartRequestValidationError{
+			field:  "User",
+			reason: "value must be inside range [1, 9223372036854775807]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
-	// no validation rules for Sku
+	if val := m.GetSku(); val < 1 || val > 4294967295 {
+		err := AddToCartRequestValidationError{
+			field:  "Sku",
+			reason: "value must be inside range [1, 4294967295]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
-	// no validation rules for Count
+	if val := m.GetCount(); val < 1 || val > 65535 {
+		err := AddToCartRequestValidationError{
+			field:  "Count",
+			reason: "value must be inside range [1, 65535]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return AddToCartRequestMultiError(errors)
@@ -163,11 +190,38 @@ func (m *DeleteFromCartRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for User
+	if val := m.GetUser(); val < 1 || val > 9223372036854775807 {
+		err := DeleteFromCartRequestValidationError{
+			field:  "User",
+			reason: "value must be inside range [1, 9223372036854775807]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
-	// no validation rules for Sku
+	if val := m.GetSku(); val < 1 || val > 4294967295 {
+		err := DeleteFromCartRequestValidationError{
+			field:  "Sku",
+			reason: "value must be inside range [1, 4294967295]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
-	// no validation rules for Count
+	if val := m.GetCount(); val < 1 || val > 65535 {
+		err := DeleteFromCartRequestValidationError{
+			field:  "Count",
+			reason: "value must be inside range [1, 65535]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return DeleteFromCartRequestMultiError(errors)
@@ -271,7 +325,16 @@ func (m *ListCartRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for User
+	if val := m.GetUser(); val < 1 || val > 9223372036854775807 {
+		err := ListCartRequestValidationError{
+			field:  "User",
+			reason: "value must be inside range [1, 9223372036854775807]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return ListCartRequestMultiError(errors)
@@ -407,7 +470,16 @@ func (m *ListCartResponse) validate(all bool) error {
 
 	}
 
-	// no validation rules for TotalPrice
+	if val := m.GetTotalPrice(); val < 1 || val > 4294967295 {
+		err := ListCartResponseValidationError{
+			field:  "TotalPrice",
+			reason: "value must be inside range [1, 4294967295]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return ListCartResponseMultiError(errors)
@@ -508,13 +580,49 @@ func (m *Item) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Sku
+	if val := m.GetSku(); val < 1 || val > 4294967295 {
+		err := ItemValidationError{
+			field:  "Sku",
+			reason: "value must be inside range [1, 4294967295]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
-	// no validation rules for Count
+	if val := m.GetCount(); val < 1 || val > 65535 {
+		err := ItemValidationError{
+			field:  "Count",
+			reason: "value must be inside range [1, 65535]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
-	// no validation rules for Name
+	if utf8.RuneCountInString(m.GetName()) < 1 {
+		err := ItemValidationError{
+			field:  "Name",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
-	// no validation rules for Price
+	if val := m.GetPrice(); val < 1 || val > 4294967295 {
+		err := ItemValidationError{
+			field:  "Price",
+			reason: "value must be inside range [1, 4294967295]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return ItemMultiError(errors)
@@ -615,7 +723,16 @@ func (m *PurchaseRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for User
+	if val := m.GetUser(); val < 1 || val > 9223372036854775807 {
+		err := PurchaseRequestValidationError{
+			field:  "User",
+			reason: "value must be inside range [1, 9223372036854775807]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return PurchaseRequestMultiError(errors)
@@ -717,7 +834,16 @@ func (m *PurchaseResponse) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for OrderId
+	if val := m.GetOrderId(); val < 1 || val > 9223372036854775807 {
+		err := PurchaseResponseValidationError{
+			field:  "OrderId",
+			reason: "value must be inside range [1, 9223372036854775807]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return PurchaseResponseMultiError(errors)

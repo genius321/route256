@@ -29,6 +29,10 @@ func NewCheckoutServer(lomsClient loms.LomsClient,
 
 func (s *service) AddToCart(ctx context.Context, req *checkout.AddToCartRequest) (*emptypb.Empty, error) {
 	log.Printf("%+v", req)
+	err := req.ValidateAll()
+	if err != nil {
+		return nil, err
+	}
 	stocksResp, _ := s.lomsClient.Stocks(ctx, &loms.StocksRequest{Sku: req.Sku})
 	stocks := stocksResp.Stocks
 	log.Printf("stocks: %v", stocks)
@@ -44,11 +48,19 @@ func (s *service) AddToCart(ctx context.Context, req *checkout.AddToCartRequest)
 
 func (s *service) DeleteFromCart(ctx context.Context, req *checkout.DeleteFromCartRequest) (*emptypb.Empty, error) {
 	log.Printf("%+v", req)
+	err := req.ValidateAll()
+	if err != nil {
+		return nil, err
+	}
 	return &emptypb.Empty{}, nil
 }
 
 func (s *service) ListCart(ctx context.Context, req *checkout.ListCartRequest) (*checkout.ListCartResponse, error) {
 	log.Printf("%+v", req)
+	err := req.ValidateAll()
+	if err != nil {
+		return nil, err
+	}
 	type item struct {
 		sku   uint32
 		count uint32
@@ -78,6 +90,10 @@ func (s *service) ListCart(ctx context.Context, req *checkout.ListCartRequest) (
 
 func (s *service) Purchase(ctx context.Context, req *checkout.PurchaseRequest) (*checkout.PurchaseResponse, error) {
 	log.Printf("%+v", req)
+	err := req.ValidateAll()
+	if err != nil {
+		return nil, err
+	}
 	createOrderResp, err := s.lomsClient.CreateOrder(ctx, &loms.CreateOrderRequest{
 		User: req.User,
 		Items: []*loms.Item{

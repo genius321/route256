@@ -84,7 +84,7 @@ vendor-proto/validate:
 	rm -rf vendor-proto/validate-repo
 
 
-generate-loms: bin vendor-proto/google/api vendor-proto/google/protobuf
+generate-loms: bin vendor-proto/google/api vendor-proto/google/protobuf vendor-proto/validate
 	mkdir -p internal/pkg/loms
 	$(PROTOC) -I api -I vendor-proto \
 	--go_out internal/pkg/loms --go_opt paths=source_relative \
@@ -93,7 +93,7 @@ generate-loms: bin vendor-proto/google/api vendor-proto/google/protobuf
 	--validate_out="lang=go,paths=source_relative:internal/pkg/loms" \
 	api/loms.proto
 
-generate-checkout: bin vendor-proto/google/api vendor-proto/google/protobuf
+generate-checkout: bin vendor-proto/google/api vendor-proto/google/protobuf vendor-proto/validate
 	mkdir -p internal/pkg/checkout
 	$(PROTOC) -I api -I vendor-proto \
 	--go_out internal/pkg/checkout --go_opt paths=source_relative \
@@ -102,7 +102,7 @@ generate-checkout: bin vendor-proto/google/api vendor-proto/google/protobuf
 	--validate_out="lang=go,paths=source_relative:internal/pkg/checkout" \
 	api/checkout.proto
 
-generate-product-service: bin vendor-proto/google/api vendor-proto/google/protobuf
+generate-product-service: bin vendor-proto/google/api vendor-proto/google/protobuf vendor-proto/validate
 	mkdir -p internal/pkg/product-service
 	$(PROTOC) -I api -I vendor-proto \
 	--go_out internal/pkg/product-service --go_opt paths=source_relative \

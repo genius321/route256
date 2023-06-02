@@ -1,15 +1,18 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"route256/checkout/internal/config"
 	"route256/checkout/internal/pkg/checkout"
 	"route256/checkout/internal/pkg/loms"
 	"route256/checkout/internal/pkg/product-service"
 	"route256/checkout/internal/service"
 
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
@@ -26,7 +29,7 @@ func main() {
 
 	lomsClient := loms.NewLomsClient(conn1)
 
-	// connction to product
+	// connection to product
 	conn2, err := grpc.Dial(config.AddressProduct,
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -51,7 +54,35 @@ func main() {
 
 	log.Printf("server listening at %v", lis.Addr())
 
-	if err = s.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
+	go func() {
+		if err = s.Serve(lis); err != nil {
+			log.Fatalf("failed to serve: %v", err)
+		}
+	}()
+
+	// Create a client connection to the gRPC server we just started
+	// This is where the gRPC-Gateway proxies the requests
+	conn, err := grpc.DialContext(
+		context.Background(),
+		lis.Addr().String(),
+		grpc.WithBlock(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		log.Fatalln("Failed to dial server:", err)
 	}
+
+	mux := runtime.NewServeMux()
+	err = checkout.RegisterCheckoutHandler(context.Background(), mux, conn)
+	if err != nil {
+		log.Fatalln("Failed to register gateway:", err)
+	}
+
+	gwServer := &http.Server{
+		Addr:    fmt.Sprintf(":%d", config.HttpPort),
+		Handler: mux,
+	}
+
+	log.Printf("Serving gRPC-Gateway on %s\n", gwServer.Addr)
+	log.Fatalln(gwServer.ListenAndServe())
 }

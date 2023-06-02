@@ -4,14 +4,40 @@ package loms;
 
 option go_package = "https://gitlab.ozon.dev/genius4666/homework/loms/internal/pkg/loms";
 
+import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 
 service Loms {
-    rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
-    rpc ListOrder(ListOrderRequest) returns (ListOrderResponse);
-    rpc OrderPayed(OrderPayedRequest) returns (google.protobuf.Empty);
-    rpc CancelOrder(CancelOrderRequest) returns (google.protobuf.Empty);
-    rpc Stocks(StocksRequest) returns (StocksResponse);
+    rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse){
+        option (google.api.http) = {
+            post: "/createOrder"
+            body: "*"
+        };
+    }
+    rpc ListOrder(ListOrderRequest) returns (ListOrderResponse){
+        option (google.api.http) = {
+            post: "/listOrder"
+            body: "*"
+        };
+    }
+    rpc OrderPayed(OrderPayedRequest) returns (google.protobuf.Empty){
+        option (google.api.http) = {
+            post: "/orderPayed"
+            body: "*"
+        };
+    }
+    rpc CancelOrder(CancelOrderRequest) returns (google.protobuf.Empty){
+        option (google.api.http) = {
+            post: "/cancelOrder"
+            body: "*"
+        };
+    }
+    rpc Stocks(StocksRequest) returns (StocksResponse){
+        option (google.api.http) = {
+            post: "/stocks"
+            body: "*"
+        };
+    }
 }
 
 message CreateOrderRequest {

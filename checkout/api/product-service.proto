@@ -4,9 +4,21 @@ package route256.product;
 
 option go_package = "https://gitlab.ozon.dev/genius4666/homework/product/internal/pkg/product";
 
-service ProductService {
-  rpc GetProduct(route256.product.GetProductRequest) returns (route256.product.GetProductResponse) {}
-  rpc ListSkus(route256.product.ListSkusRequest) returns (route256.product.ListSkusResponse) {}
+import "google/api/annotations.proto";
+
+service ProductService{
+  rpc GetProduct(route256.product.GetProductRequest) returns (route256.product.GetProductResponse){
+    option (google.api.http) = {
+        post: "/get_product"
+        body: "*"
+    };
+  }
+  rpc ListSkus(route256.product.ListSkusRequest) returns (route256.product.ListSkusResponse){
+    option (google.api.http) = {
+        post: "/list_skus"
+        body: "*"
+    };
+  }
 }
 
 message GetProductRequest {

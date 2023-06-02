@@ -4,13 +4,34 @@ package checkout;
 
 option go_package = "https://gitlab.ozon.dev/genius4666/homework/checkout/internal/pkg/checkout";
 
+import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 
 service Checkout {
-    rpc AddToCart(AddToCartRequest) returns (google.protobuf.Empty);
-    rpc DeleteFromCart(DeleteFromCartRequest) returns (google.protobuf.Empty);
-    rpc ListCart(ListCartRequest) returns (ListCartResponse);
-    rpc Purchase(PurchaseRequest) returns (PurchaseResponse);
+    rpc AddToCart(AddToCartRequest) returns (google.protobuf.Empty){
+        option (google.api.http) = {
+            post: "/addToCart"
+            body: "*"
+        };
+    }
+    rpc DeleteFromCart(DeleteFromCartRequest) returns (google.protobuf.Empty){
+        option (google.api.http) = {
+            post: "/deleteFromCart"
+            body: "*"
+        };
+    }
+    rpc ListCart(ListCartRequest) returns (ListCartResponse){
+        option (google.api.http) = {
+            post: "/listCart"
+            body: "*"
+        };
+    }
+    rpc Purchase(PurchaseRequest) returns (PurchaseResponse){
+        option (google.api.http) = {
+            post: "/purchase"
+            body: "*"
+        };
+    }
 }
 
 message AddToCartRequest {

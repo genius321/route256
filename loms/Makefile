@@ -83,7 +83,7 @@ vendor-proto/validate:
 	mv vendor-proto/validate-repo/validate vendor-proto
 	rm -rf vendor-proto/validate-repo
 
-generate-loms: bin vendor-proto/google/api vendor-proto/google/protobuf
+generate-loms: bin vendor-proto/google/api vendor-proto/google/protobuf vendor-proto/validate
 	mkdir -p internal/pkg/loms
 	$(PROTOC) -I api -I vendor-proto \
 	--go_out internal/pkg/loms --go_opt paths=source_relative \

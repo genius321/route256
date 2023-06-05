@@ -52,7 +52,7 @@ message Item {
 }
 
 message CreateOrderResponse {
-    int64 order_id = 1 [(validate.rules).int64 = {gte: 1,  lte: 9223372036854775807}];
+    int64 order_id = 1;
 }
 
 message ListOrderRequest {
@@ -61,8 +61,8 @@ message ListOrderRequest {
 
 message ListOrderResponse {
     string status = 1;
-    int64 user = 2 [(validate.rules).int64 = {gte: 1,  lte: 9223372036854775807}];
-    repeated Item items = 3 [(validate.rules).repeated = {min_items: 1}];
+    int64 user = 2;
+    repeated Item items = 3;
 }
 
 message OrderPayedRequest {
@@ -83,6 +83,6 @@ message StocksResponse {
 }
 
 message Stock {
-    int64 warehouse_id = 1 [(validate.rules).int64 = {gte: 1,  lte: 9223372036854775807}];
-    uint64 count = 2 [(validate.rules).uint64 = {gte: 1,  lte: 18446744073709551615}];
+    int64 warehouse_id = 1;
+    uint64 count = 2;
 }

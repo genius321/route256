@@ -470,16 +470,7 @@ func (m *ListCartResponse) validate(all bool) error {
 
 	}
 
-	if val := m.GetTotalPrice(); val < 1 || val > 4294967295 {
-		err := ListCartResponseValidationError{
-			field:  "TotalPrice",
-			reason: "value must be inside range [1, 4294967295]",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
+	// no validation rules for TotalPrice
 
 	if len(errors) > 0 {
 		return ListCartResponseMultiError(errors)
@@ -580,49 +571,13 @@ func (m *Item) validate(all bool) error {
 
 	var errors []error
 
-	if val := m.GetSku(); val < 1 || val > 4294967295 {
-		err := ItemValidationError{
-			field:  "Sku",
-			reason: "value must be inside range [1, 4294967295]",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
+	// no validation rules for Sku
 
-	if val := m.GetCount(); val < 1 || val > 65535 {
-		err := ItemValidationError{
-			field:  "Count",
-			reason: "value must be inside range [1, 65535]",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
+	// no validation rules for Count
 
-	if utf8.RuneCountInString(m.GetName()) < 1 {
-		err := ItemValidationError{
-			field:  "Name",
-			reason: "value length must be at least 1 runes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
+	// no validation rules for Name
 
-	if val := m.GetPrice(); val < 1 || val > 4294967295 {
-		err := ItemValidationError{
-			field:  "Price",
-			reason: "value must be inside range [1, 4294967295]",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
+	// no validation rules for Price
 
 	if len(errors) > 0 {
 		return ItemMultiError(errors)
@@ -834,16 +789,7 @@ func (m *PurchaseResponse) validate(all bool) error {
 
 	var errors []error
 
-	if val := m.GetOrderId(); val < 1 || val > 9223372036854775807 {
-		err := PurchaseResponseValidationError{
-			field:  "OrderId",
-			reason: "value must be inside range [1, 9223372036854775807]",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
+	// no validation rules for OrderId
 
 	if len(errors) > 0 {
 		return PurchaseResponseMultiError(errors)

@@ -19,25 +19,23 @@ import (
 )
 
 func main() {
-	// connection to loms
-	conn1, err := grpc.Dial(config.AddressLoms,
+	connToLoms, err := grpc.Dial(config.AddressLoms,
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("failed to connect to server: %v", err)
 	}
-	defer conn1.Close()
+	defer connToLoms.Close()
 
-	lomsClient := loms.NewLomsClient(conn1)
+	lomsClient := loms.NewLomsClient(connToLoms)
 
-	// connection to product
-	conn2, err := grpc.Dial(config.AddressProduct,
+	connToProduct, err := grpc.Dial(config.AddressProduct,
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("failed to connect to server: %v", err)
 	}
-	defer conn2.Close()
+	defer connToProduct.Close()
 
-	productClient := product.NewProductServiceClient(conn2)
+	productClient := product.NewProductServiceClient(connToProduct)
 
 	// checkout server setup
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", config.GrpcPort))

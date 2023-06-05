@@ -335,16 +335,7 @@ func (m *CreateOrderResponse) validate(all bool) error {
 
 	var errors []error
 
-	if val := m.GetOrderId(); val < 1 || val > 9223372036854775807 {
-		err := CreateOrderResponseValidationError{
-			field:  "OrderId",
-			reason: "value must be inside range [1, 9223372036854775807]",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
+	// no validation rules for OrderId
 
 	if len(errors) > 0 {
 		return CreateOrderResponseMultiError(errors)
@@ -561,27 +552,7 @@ func (m *ListOrderResponse) validate(all bool) error {
 
 	// no validation rules for Status
 
-	if val := m.GetUser(); val < 1 || val > 9223372036854775807 {
-		err := ListOrderResponseValidationError{
-			field:  "User",
-			reason: "value must be inside range [1, 9223372036854775807]",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
-	if len(m.GetItems()) < 1 {
-		err := ListOrderResponseValidationError{
-			field:  "Items",
-			reason: "value must contain at least 1 item(s)",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
+	// no validation rules for User
 
 	for idx, item := range m.GetItems() {
 		_, _ = idx, item
@@ -1189,27 +1160,9 @@ func (m *Stock) validate(all bool) error {
 
 	var errors []error
 
-	if val := m.GetWarehouseId(); val < 1 || val > 9223372036854775807 {
-		err := StockValidationError{
-			field:  "WarehouseId",
-			reason: "value must be inside range [1, 9223372036854775807]",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
+	// no validation rules for WarehouseId
 
-	if val := m.GetCount(); val < 1 || val > 18446744073709551615 {
-		err := StockValidationError{
-			field:  "Count",
-			reason: "value must be inside range [1, 18446744073709551615]",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
+	// no validation rules for Count
 
 	if len(errors) > 0 {
 		return StockMultiError(errors)

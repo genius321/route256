@@ -1,17 +1,88 @@
-version: "3.1"
+version: "3.3"
+
+networks:
+  net:
+    driver: bridge
+
 services:
+  # checkout's database
+  postgres-checkout:
+    image: postgres:15.1
+    environment:
+      POSTGRES_DB: checkout
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+    volumes:
+      - ./checkout:/var/lib/postgresql/data
+    ports:
+      - 5433:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d checkout"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 4G
+    networks:
+      - net
+  # checkout service
   checkout:
     image: checkout
     build: ./checkout/
+    environment:
+      DATABASE_URL: postgres://user:password@postgres:5432/postgres-checkout?sslmode=disable # должно быть в секретах/конфиге. Учебный пример
     ports:
       - "8080:8080"
       - "50051:50051"
+    depends_on:
+      - postgres-checkout
+    networks:
+      - net    
+  # loms's database
+  postgres-loms:
+    image: postgres:15.1
+    environment:
+      POSTGRES_DB: loms
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+    volumes:
+      - ./loms:/var/lib/postgresql/data
+    ports:
+      - 5434:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d loms"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 4G
+    networks:
+      - net  
+  # loms service
   loms:
     image: loms
     build: ./loms/
+    environment:
+      DATABASE_URL: postgres://user:password@postgres-loms:5432/loms?sslmode=disable # должно быть в секретах/конфиге. Учебный пример
     ports:
       - "8081:8081"
       - "50052:50052"
+    depends_on:
+      - postgres-loms
+    networks:
+      - net   
   # notification:
   #   image: notification
   #   build: ./notification

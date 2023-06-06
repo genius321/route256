@@ -7,6 +7,11 @@ run-all: build-all
 	docker compose up --force-recreate --build
     # docker-compose up --force-recreate --build
 
+precommit:
+	cd checkout && make precommit
+	cd loms && make precommit
+	cd notifications && make precommit
+
 down:
 	docker compose down
   	# docker-compose down
@@ -14,8 +19,3 @@ down:
 clean-data:
 	sudo rm -rf ./checkout/pgdata
 	sudo rm -rf ./loms/pgdata
-
-precommit:
-	cd checkout && make precommit
-	cd loms && make precommit
-	cd notifications && make precommit

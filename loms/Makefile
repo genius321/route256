@@ -96,3 +96,9 @@ clean:
 	rm -rf internal/pkg
 
 generate: clean generate-loms
+
+migration-up:
+	goose -dir ./migrations postgres "postgres://user:password@localhost:5434/loms?sslmode=disable" up
+
+migration-status:
+	goose -dir ./migrations postgres "postgres://user:password@localhost:5434/loms?sslmode=disable" status

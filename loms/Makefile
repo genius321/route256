@@ -95,10 +95,16 @@ generate-loms: bin vendor-proto/google/api vendor-proto/google/protobuf vendor-p
 clean:
 	rm -rf internal/pkg
 
+clean-data:
+	sudo rm -rf pgdata
+
 generate: clean generate-loms
 
 migration-up:
 	goose -dir ./migrations postgres "postgres://user:password@localhost:5434/loms?sslmode=disable" up
+
+migration-down:
+	goose -dir ./migrations postgres "postgres://user:password@localhost:5434/loms?sslmode=disable" down
 
 migration-status:
 	goose -dir ./migrations postgres "postgres://user:password@localhost:5434/loms?sslmode=disable" status

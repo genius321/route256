@@ -6,10 +6,14 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"route256/loms/internal/pkg/loms"
+	"route256/loms/internal/repository/postgres"
+	"route256/loms/internal/repository/postgres/tx"
 	"route256/loms/internal/service"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
@@ -21,6 +25,17 @@ const (
 )
 
 func main() {
+	// connection to db
+	pool, err := pgxpool.Connect(context.Background(), os.Getenv("DATABASE_URL"))
+	if err != nil {
+		log.Fatal("connect to db: %w", err)
+	}
+	defer pool.Close()
+
+	provider := tx.New(pool)
+	repo := postgres.New(provider)
+
+	// loms server setup
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
@@ -28,7 +43,7 @@ func main() {
 
 	s := grpc.NewServer()
 	reflection.Register(s)
-	loms.RegisterLomsServer(s, service.NewLomsServer())
+	loms.RegisterLomsServer(s, service.NewLomsServer(repo, provider))
 
 	log.Printf("server listening at %v", lis.Addr())
 

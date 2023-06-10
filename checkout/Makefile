@@ -114,10 +114,13 @@ generate-product-service: bin vendor-proto/google/api vendor-proto/google/protob
 clean:
 	rm -rf internal/pkg
 
+clean-data:
+	sudo rm -rf pgdata
+
 generate: clean generate-loms generate-checkout generate-product-service
 
 migration-up:
-	goose -dir ./migrations postgres "postgres://user:password@localhost:5433/loms?sslmode=disable" up
+	goose -dir ./migrations postgres "postgres://user:password@localhost:5433/checkout?sslmode=disable" up
 
 migration-status:
-	goose -dir ./migrations postgres "postgres://user:password@localhost:5433/loms?sslmode=disable" status
+	goose -dir ./migrations postgres "postgres://user:password@localhost:5433/checkout?sslmode=disable" status

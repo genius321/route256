@@ -6,13 +6,17 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"route256/checkout/internal/config"
 	"route256/checkout/internal/pkg/checkout"
 	"route256/checkout/internal/pkg/loms"
 	"route256/checkout/internal/pkg/product-service"
+	"route256/checkout/internal/repository/postgres"
+	"route256/checkout/internal/repository/postgres/tx"
 	"route256/checkout/internal/service"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
@@ -37,6 +41,16 @@ func main() {
 
 	productClient := product.NewProductServiceClient(connToProduct)
 
+	// connection to db
+	pool, err := pgxpool.Connect(context.Background(), os.Getenv("CHECKOUT_DATABASE_URL"))
+	if err != nil {
+		log.Fatalf("connect to db: %v", err)
+	}
+	defer pool.Close()
+
+	provider := tx.New(pool)
+	repo := postgres.New(provider)
+
 	// checkout server setup
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", config.GrpcPort))
 	if err != nil {
@@ -48,6 +62,8 @@ func main() {
 	checkout.RegisterCheckoutServer(s, service.NewCheckoutServer(
 		lomsClient,
 		productClient,
+		repo,
+		provider,
 	))
 
 	log.Printf("server listening at %v", lis.Addr())

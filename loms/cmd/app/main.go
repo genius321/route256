@@ -26,7 +26,7 @@ const (
 
 func main() {
 	// connection to db
-	pool, err := pgxpool.Connect(context.Background(), os.Getenv("DATABASE_URL"))
+	pool, err := pgxpool.Connect(context.Background(), os.Getenv("LOMS_DATABASE_URL"))
 	if err != nil {
 		log.Fatal("connect to db: %w", err)
 	}

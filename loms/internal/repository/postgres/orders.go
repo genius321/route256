@@ -14,8 +14,8 @@ import (
 func (r *Repository) CreateOrder(ctx context.Context, req *loms.CreateOrderRequest) (*loms.CreateOrderResponse, error) {
 	db := r.provider.GetDB(ctx)
 
-	query := psql.Insert(tableNameOrders).Columns("status_name", "user_id").
-		Values("new", req.User).
+	query := psql.Insert(tableNameOrders).Columns("user_id").
+		Values(req.User).
 		Suffix("RETURNING order_id")
 
 	rawSQL, args, err := query.ToSql()

@@ -2,7 +2,7 @@
 -- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS orders (
     order_id bigserial PRIMARY KEY,
-    status_name varchar,
+    status_name text default 'new',
     user_id bigint
 );
 -- +goose StatementEnd

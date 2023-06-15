@@ -122,5 +122,8 @@ generate: clean generate-loms generate-checkout generate-product-service
 migration-up:
 	goose -dir ./migrations postgres "postgres://user:password@localhost:5433/checkout?sslmode=disable" up
 
+migration-down:
+	goose -dir ./migrations postgres "postgres://user:password@localhost:5433/checkout?sslmode=disable" down
+
 migration-status:
 	goose -dir ./migrations postgres "postgres://user:password@localhost:5433/checkout?sslmode=disable" status

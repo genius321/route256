@@ -133,13 +133,17 @@ func (s *service) Purchase(ctx context.Context, req *checkout.PurchaseRequest) (
 			Count: uint32(v.Amount),
 		})
 	}
-	createOrderResp, err := s.lomsClient.CreateOrder(ctx, &loms.CreateOrderRequest{
-		User:  req.User,
-		Items: respItems,
+	var createOrderResp *loms.CreateOrderResponse
+	err = s.Serializable(ctx, func(ctxTx context.Context) error {
+		createOrderResp, err = s.lomsClient.CreateOrder(ctx, &loms.CreateOrderRequest{
+			User:  req.User,
+			Items: respItems,
+		})
+		if err != nil {
+			return err
+		}
+		_, err := s.Repository.DeleteAllFromCart(ctx, &checkout.DeleteFromCartRequest{User: req.User})
+		return err
 	})
-	if err != nil {
-		return nil, err
-	}
-	s.Repository.DeleteAllFromCart(ctx, &checkout.DeleteFromCartRequest{User: req.User})
 	return &checkout.PurchaseResponse{OrderId: createOrderResp.OrderId}, nil
 }

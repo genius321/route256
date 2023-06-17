@@ -8,7 +8,7 @@ import (
 type ratelimit chan struct{}
 
 func New(ctx context.Context, limit int) chan<- struct{} {
-	r := make(chan struct{})
+	r := make(chan struct{}, limit)
 	go ratelimit(r).clean(ctx, limit)
 	return r
 }
@@ -22,10 +22,14 @@ func (r ratelimit) clean(ctx context.Context, limit int) {
 		case <-ctx.Done():
 			return
 		case <-t.C:
-			_, ok := <-r
-			// если канал закрыт, выходим из метода
-			if !ok {
+			select {
+			// если канал закрыт, выходим из clean
+			case <-r:
 				return
+			default:
+			}
+			if len(r) == limit {
+				<-r
 			}
 		}
 	}

@@ -6,9 +6,9 @@ import (
 	"google.golang.org/grpc"
 )
 
-type Workerpool[I, O any] chan struct{}
+type workerpool[I, O any] chan struct{}
 
-func New[I, O any](limit int) Workerpool[I, O] {
+func New[I, O any](limit int) workerpool[I, O] {
 	return make(chan struct{}, limit)
 }
 
@@ -17,7 +17,7 @@ type Either[T any] struct {
 	Err   error
 }
 
-func (wp Workerpool[I, O]) Exec(ctx context.Context, in *I, work func(context.Context, *I, ...grpc.CallOption) (*O, error)) <-chan Either[O] {
+func (wp workerpool[I, O]) Exec(ctx context.Context, in *I, work func(context.Context, *I, ...grpc.CallOption) (*O, error)) <-chan Either[O] {
 	result := make(chan Either[O])
 	select {
 	case <-ctx.Done():

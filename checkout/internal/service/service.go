@@ -8,6 +8,7 @@ import (
 	"route256/checkout/internal/pkg/checkout"
 	"route256/checkout/internal/pkg/loms"
 	"route256/checkout/internal/pkg/product-service"
+	"route256/checkout/internal/pkg/ratelimit"
 	"route256/checkout/internal/pkg/workerpool"
 	"route256/checkout/internal/repository/schema"
 	"sync"
@@ -53,7 +54,10 @@ func NewCheckoutServer(lomsClient loms.LomsClient,
 	}
 }
 
-const worker = 5
+const (
+	worker = 5
+	limit  = 10
+)
 
 func (s *service) AddToCart(ctx context.Context, req *checkout.AddToCartRequest) (*emptypb.Empty, error) {
 	log.Printf("%+v", req)
@@ -106,9 +110,12 @@ func (s *service) ListCart(ctx context.Context, req *checkout.ListCartRequest) (
 
 	wp := workerpool.New[product.GetProductRequest, product.GetProductResponse](worker)
 
+	ratelimit := ratelimit.New(ctx, limit)
+
 	wg := sync.WaitGroup{}
 	timeStart := time.Now()
 	for i, v := range *items {
+		ratelimit <- struct{}{}
 		wg.Add(1)
 		debugcharts.RPS.Add(1)
 		eitherCh := wp.Exec(ctx,
@@ -134,6 +141,8 @@ func (s *service) ListCart(ctx context.Context, req *checkout.ListCartRequest) (
 			totalPrice.Add(int64(either.Value.Price * uint32(v.Amount)))
 		}(i, v)
 	}
+	// чтобы не утекала горутина clean
+	close(ratelimit)
 	wg.Wait()
 	log.Println(time.Since(timeStart))
 	return &checkout.ListCartResponse{Items: respItems, TotalPrice: uint32(totalPrice.Load())}, nil

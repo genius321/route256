@@ -22,12 +22,6 @@ func (r ratelimit) clean(ctx context.Context, limit int) {
 		case <-ctx.Done():
 			return
 		case <-t.C:
-			select {
-			// если канал закрыт, выходим из clean
-			case <-r:
-				return
-			default:
-			}
 			if len(r) == limit {
 				<-r
 			}

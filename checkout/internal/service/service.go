@@ -110,6 +110,7 @@ func (s *service) ListCart(ctx context.Context, req *checkout.ListCartRequest) (
 
 	wp := workerpool.New[product.GetProductRequest, product.GetProductResponse](worker)
 
+	ctx, cancel := context.WithCancel(ctx)
 	ratelimit := ratelimit.New(ctx, limit)
 
 	wg := sync.WaitGroup{}
@@ -141,9 +142,9 @@ func (s *service) ListCart(ctx context.Context, req *checkout.ListCartRequest) (
 			totalPrice.Add(int64(either.Value.Price * uint32(v.Amount)))
 		}(i, v)
 	}
-	// чтобы не утекала горутина clean
-	close(ratelimit)
 	wg.Wait()
+	// чтобы не утекала горутина clean
+	cancel()
 	log.Println(time.Since(timeStart))
 	return &checkout.ListCartResponse{Items: respItems, TotalPrice: uint32(totalPrice.Load())}, nil
 }

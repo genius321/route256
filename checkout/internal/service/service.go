@@ -123,7 +123,7 @@ func (s *service) ListCart(ctx context.Context, req *checkout.ListCartRequest) (
 			either := <-eitherCh
 			log.Println(either.Value)
 			if either.Err != nil {
-				log.Printf("get product: %v\n", either.Err)
+				log.Fatalf("get product: %v\n", either.Err)
 			}
 			respItems[i] = &checkout.Item{
 				Sku:   uint32(v.Sku),
@@ -137,28 +137,6 @@ func (s *service) ListCart(ctx context.Context, req *checkout.ListCartRequest) (
 	wg.Wait()
 	log.Println(time.Since(timeStart))
 	return &checkout.ListCartResponse{Items: respItems, TotalPrice: uint32(totalPrice.Load())}, nil
-
-	// var totalPrice uint32
-	// timeStart := time.Now()
-	// for i, v := range *items {
-	// 	product, err := s.productClient.GetProduct(ctx, &product.GetProductRequest{
-	// 		Token: config.Token,
-	// 		Sku:   uint32(v.Sku),
-	// 	})
-	// 	if err != nil {
-	// 		return nil, fmt.Errorf("get product: %w", err)
-	// 	}
-	// 	respItems[i] = &checkout.Item{
-	// 		Sku:   uint32(v.Sku),
-	// 		Count: uint32(v.Amount),
-	// 		Name:  product.Name,
-	// 		Price: product.Price,
-	// 	}
-
-	// 	totalPrice += product.Price * uint32(v.Amount)
-	// }
-	// log.Println(time.Since(timeStart))
-	// return &checkout.ListCartResponse{Items: respItems, TotalPrice: totalPrice}, nil
 }
 
 func (s *service) Purchase(ctx context.Context, req *checkout.PurchaseRequest) (*checkout.PurchaseResponse, error) {

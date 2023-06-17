@@ -21,6 +21,7 @@ func (wp Workerpool[I, O]) Exec(ctx context.Context, in *I, work func(context.Co
 	result := make(chan Either[O])
 	select {
 	case <-ctx.Done():
+		result <- Either[O]{Err: ctx.Err()}
 	case wp <- struct{}{}:
 		go func() {
 			val, err := work(ctx, in)

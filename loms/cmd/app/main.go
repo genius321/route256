@@ -11,7 +11,9 @@ import (
 	"route256/loms/internal/repository/postgres"
 	"route256/loms/internal/repository/postgres/tx"
 	"route256/loms/internal/service"
+	"time"
 
+	"github.com/aitsvet/debugcharts"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"google.golang.org/grpc"
@@ -20,11 +22,26 @@ import (
 )
 
 const (
-	grpcPort = 50052
-	httpPort = 8081
+	grpcPort      = 50052
+	httpPort      = 8081
+	httpPprofPort = ":6061"
 )
 
 func main() {
+	// reset RPS counter
+	go func() {
+		t := time.NewTicker(time.Second)
+		for range t.C {
+			debugcharts.RPS.Set(0)
+		}
+	}()
+
+	// up debugcharts server
+	go func() {
+		log.Printf("server Pprof on %v\n", httpPprofPort)
+		log.Println(http.ListenAndServe(httpPprofPort, nil))
+	}()
+
 	// connection to db
 	pool, err := pgxpool.Connect(context.Background(), os.Getenv("LOMS_DATABASE_URL"))
 	if err != nil {

@@ -38,6 +38,7 @@ services:
     environment:
       CHECKOUT_DATABASE_URL: postgres://user:password@postgres-checkout:5432/checkout?sslmode=disable # должно быть в секретах/конфиге. Учебный пример
     ports:
+      - "6060:6060"
       - "8080:8080"
       - "50051:50051"
     depends_on:

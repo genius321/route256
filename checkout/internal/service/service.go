@@ -3,14 +3,18 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"route256/checkout/internal/config"
 	"route256/checkout/internal/pkg/checkout"
 	"route256/checkout/internal/pkg/loms"
 	"route256/checkout/internal/pkg/product-service"
+	"route256/checkout/internal/pkg/workerpool"
 	"route256/checkout/internal/repository/schema"
+	"sync"
+	"sync/atomic"
+	"time"
 
+	"github.com/aitsvet/debugcharts"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -48,6 +52,8 @@ func NewCheckoutServer(lomsClient loms.LomsClient,
 		TransactionManager: provider,
 	}
 }
+
+const worker = 5
 
 func (s *service) AddToCart(ctx context.Context, req *checkout.AddToCartRequest) (*emptypb.Empty, error) {
 	log.Printf("%+v", req)
@@ -95,25 +101,64 @@ func (s *service) ListCart(ctx context.Context, req *checkout.ListCartRequest) (
 		return nil, err
 	}
 	respItems := make([]*checkout.Item, len(*items))
-	var totalPrice uint32
-	for i, v := range *items {
-		product, err := s.productClient.GetProduct(ctx, &product.GetProductRequest{
-			Token: config.Token,
-			Sku:   uint32(v.Sku),
-		})
-		if err != nil {
-			return nil, fmt.Errorf("get product: %w", err)
-		}
-		respItems[i] = &checkout.Item{
-			Sku:   uint32(v.Sku),
-			Count: uint32(v.Amount),
-			Name:  product.Name,
-			Price: product.Price,
-		}
 
-		totalPrice += product.Price * uint32(v.Amount)
+	var totalPrice atomic.Int64
+
+	wp := workerpool.New[product.GetProductRequest, product.GetProductResponse](worker)
+
+	wg := sync.WaitGroup{}
+	timeStart := time.Now()
+	for i, v := range *items {
+		wg.Add(1)
+		debugcharts.RPS.Add(1)
+		eitherCh := wp.Exec(ctx,
+			&product.GetProductRequest{
+				Token: config.Token,
+				Sku:   uint32(v.Sku),
+			},
+			s.productClient.GetProduct,
+		)
+		go func(i int, v schema.Item) {
+			defer wg.Done()
+			either := <-eitherCh
+			log.Println(either.Value)
+			if either.Err != nil {
+				log.Printf("get product: %v\n", either.Err)
+			}
+			respItems[i] = &checkout.Item{
+				Sku:   uint32(v.Sku),
+				Count: uint32(v.Amount),
+				Name:  either.Value.Name,
+				Price: either.Value.Price,
+			}
+			totalPrice.Add(int64(either.Value.Price * uint32(v.Amount)))
+		}(i, v)
 	}
-	return &checkout.ListCartResponse{Items: respItems, TotalPrice: totalPrice}, nil
+	wg.Wait()
+	log.Println(time.Since(timeStart))
+	return &checkout.ListCartResponse{Items: respItems, TotalPrice: uint32(totalPrice.Load())}, nil
+
+	// var totalPrice uint32
+	// timeStart := time.Now()
+	// for i, v := range *items {
+	// 	product, err := s.productClient.GetProduct(ctx, &product.GetProductRequest{
+	// 		Token: config.Token,
+	// 		Sku:   uint32(v.Sku),
+	// 	})
+	// 	if err != nil {
+	// 		return nil, fmt.Errorf("get product: %w", err)
+	// 	}
+	// 	respItems[i] = &checkout.Item{
+	// 		Sku:   uint32(v.Sku),
+	// 		Count: uint32(v.Amount),
+	// 		Name:  product.Name,
+	// 		Price: product.Price,
+	// 	}
+
+	// 	totalPrice += product.Price * uint32(v.Amount)
+	// }
+	// log.Println(time.Since(timeStart))
+	// return &checkout.ListCartResponse{Items: respItems, TotalPrice: totalPrice}, nil
 }
 
 func (s *service) Purchase(ctx context.Context, req *checkout.PurchaseRequest) (*checkout.PurchaseResponse, error) {

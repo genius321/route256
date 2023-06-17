@@ -14,7 +14,11 @@ import (
 	"route256/checkout/internal/repository/postgres"
 	"route256/checkout/internal/repository/postgres/tx"
 	"route256/checkout/internal/service"
+	"time"
 
+	_ "net/http/pprof"
+
+	"github.com/aitsvet/debugcharts"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"google.golang.org/grpc"
@@ -23,6 +27,20 @@ import (
 )
 
 func main() {
+	// reset RPS counter
+	go func() {
+		t := time.NewTicker(time.Second)
+		for range t.C {
+			debugcharts.RPS.Set(0)
+		}
+	}()
+
+	// up debugcharts server
+	go func() {
+		log.Println("server Pprof on :6060")
+		log.Println(http.ListenAndServe(":6060", nil))
+	}()
+
 	connToLoms, err := grpc.Dial(config.AddressLoms,
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {

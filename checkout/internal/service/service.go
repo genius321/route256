@@ -28,7 +28,7 @@ type Repository interface {
 	AddToCart(ctx context.Context, req *checkout.AddToCartRequest) (*emptypb.Empty, error)
 	DeleteFromCart(ctx context.Context, req *checkout.DeleteFromCartRequest) (*emptypb.Empty, error)
 	DeleteAllFromCart(ctx context.Context, req *checkout.DeleteFromCartRequest) (*emptypb.Empty, error)
-	ListCart(ctx context.Context, req *checkout.ListCartRequest) (*[]schema.Item, error)
+	ListCart(ctx context.Context, req *checkout.ListCartRequest) ([]*schema.Item, error)
 	TakeCountSkuUserFromCart(ctx context.Context, userId int64, sku int64) (int64, error)
 	SubFromCart(ctx context.Context, userId int64, sku int64, count int64) error
 }
@@ -104,7 +104,7 @@ func (s *service) ListCart(ctx context.Context, req *checkout.ListCartRequest) (
 	if err != nil {
 		return nil, err
 	}
-	respItems := make([]*checkout.Item, len(*items))
+	respItems := make([]*checkout.Item, len(items))
 
 	var totalPrice atomic.Int64
 
@@ -115,7 +115,7 @@ func (s *service) ListCart(ctx context.Context, req *checkout.ListCartRequest) (
 
 	wg := sync.WaitGroup{}
 	timeStart := time.Now()
-	for i, v := range *items {
+	for i, v := range items {
 		ratelimit <- struct{}{}
 		wg.Add(1)
 		debugcharts.RPS.Add(1)
@@ -126,7 +126,7 @@ func (s *service) ListCart(ctx context.Context, req *checkout.ListCartRequest) (
 			},
 			s.productClient.GetProduct,
 		)
-		go func(i int, v schema.Item) {
+		go func(i int, v *schema.Item) {
 			defer wg.Done()
 			either := <-eitherCh
 			log.Println(either.Value)
@@ -159,8 +159,8 @@ func (s *service) Purchase(ctx context.Context, req *checkout.PurchaseRequest) (
 	if err != nil {
 		return nil, err
 	}
-	respItems := make([]*loms.Item, 0, len(*items))
-	for _, v := range *items {
+	respItems := make([]*loms.Item, 0, len(items))
+	for _, v := range items {
 		respItems = append(respItems, &loms.Item{
 			Sku:   uint32(v.Sku),
 			Count: uint32(v.Amount),

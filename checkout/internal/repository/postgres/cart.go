@@ -84,7 +84,7 @@ WHERE user_id = $1;
 	return &emptypb.Empty{}, nil
 }
 
-func (r *Repository) ListCart(ctx context.Context, req *checkout.ListCartRequest) (*[]schema.Item, error) {
+func (r *Repository) ListCart(ctx context.Context, req *checkout.ListCartRequest) ([]*schema.Item, error) {
 	db := r.provider.GetDB(ctx)
 	query := psql.Select("sku", "amount").
 		From("carts").
@@ -93,10 +93,10 @@ func (r *Repository) ListCart(ctx context.Context, req *checkout.ListCartRequest
 	if err != nil {
 		return nil, fmt.Errorf("build select ListCart: %s", err)
 	}
-	var resultSQL []schema.Item
+	var resultSQL []*schema.Item
 	err = pgxscan.Select(ctx, db, &resultSQL, rawSQL, args...)
 	if err != nil {
 		return nil, fmt.Errorf("exec select ListCart: %w", err)
 	}
-	return &resultSQL, nil
+	return resultSQL, nil
 }

@@ -5,16 +5,18 @@ import (
 	"time"
 )
 
-type ratelimit chan struct{}
+type Ratelimit struct {
+	Ratelimiter chan struct{}
+}
 
-func New(ctx context.Context, limit int) chan<- struct{} {
-	r := make(chan struct{}, limit)
-	go ratelimit(r).clean(ctx, limit)
-	return r
+func New(ctx context.Context, limit int) *Ratelimit {
+	r := Ratelimit{Ratelimiter: make(chan struct{}, limit)}
+	go r.clean(ctx, limit)
+	return &r
 }
 
 // вычитывает данные из канала с определённым интервалом
-func (r ratelimit) clean(ctx context.Context, limit int) {
+func (r *Ratelimit) clean(ctx context.Context, limit int) {
 	interval := time.Second / time.Duration(limit)
 	t := time.NewTicker(interval)
 	for {
@@ -22,8 +24,8 @@ func (r ratelimit) clean(ctx context.Context, limit int) {
 		case <-ctx.Done():
 			return
 		case <-t.C:
-			if len(r) == limit {
-				<-r
+			if len(r.Ratelimiter) == limit {
+				<-r.Ratelimiter
 			}
 		}
 	}

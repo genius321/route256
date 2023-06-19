@@ -11,6 +11,7 @@ import (
 	"route256/checkout/internal/pkg/checkout"
 	"route256/checkout/internal/pkg/loms"
 	"route256/checkout/internal/pkg/product-service"
+	"route256/checkout/internal/pkg/ratelimit"
 	"route256/checkout/internal/repository/postgres"
 	"route256/checkout/internal/repository/postgres/tx"
 	"route256/checkout/internal/service"
@@ -68,6 +69,7 @@ func main() {
 
 	provider := tx.New(pool)
 	repo := postgres.New(provider)
+	ratelimiter := ratelimit.New(context.Background(), config.RateLimit)
 
 	// checkout server setup
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", config.GrpcPort))
@@ -82,6 +84,7 @@ func main() {
 		productClient,
 		repo,
 		provider,
+		ratelimiter,
 	))
 
 	log.Printf("server listening at %v", lis.Addr())

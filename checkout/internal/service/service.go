@@ -39,18 +39,21 @@ type service struct {
 	productClient product.ProductServiceClient
 	TransactionManager
 	Repository
+	ratelimit.Ratelimit
 }
 
 func NewCheckoutServer(lomsClient loms.LomsClient,
 	productClient product.ProductServiceClient,
 	repo Repository,
 	provider TransactionManager,
+	ratelimiter *ratelimit.Ratelimit,
 ) *service {
 	return &service{
 		lomsClient:         lomsClient,
 		productClient:      productClient,
 		Repository:         repo,
 		TransactionManager: provider,
+		Ratelimit:          *ratelimiter,
 	}
 }
 
@@ -110,13 +113,10 @@ func (s *service) ListCart(ctx context.Context, req *checkout.ListCartRequest) (
 
 	wp := workerpool.New[product.GetProductRequest, product.GetProductResponse](worker)
 
-	ctx, cancel := context.WithCancel(ctx)
-	ratelimit := ratelimit.New(ctx, limit)
-
 	wg := sync.WaitGroup{}
 	timeStart := time.Now()
 	for i, v := range items {
-		ratelimit <- struct{}{}
+		s.Ratelimiter <- struct{}{}
 		wg.Add(1)
 		debugcharts.RPS.Add(1)
 		eitherCh := wp.Exec(ctx,
@@ -143,8 +143,6 @@ func (s *service) ListCart(ctx context.Context, req *checkout.ListCartRequest) (
 		}(i, v)
 	}
 	wg.Wait()
-	// чтобы не утекала горутина clean
-	cancel()
 	log.Println(time.Since(timeStart))
 	return &checkout.ListCartResponse{Items: respItems, TotalPrice: uint32(totalPrice.Load())}, nil
 }

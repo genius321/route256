@@ -15,7 +15,7 @@ func New(ctx context.Context, limit int) *Ratelimit {
 	return &r
 }
 
-// вычитывает данные из канала с определённым интервалом
+// вычитывает данные из канала с определённым интервалом только по достижению лимита
 func (r *Ratelimit) clean(ctx context.Context, limit int) {
 	interval := time.Second / time.Duration(limit)
 	t := time.NewTicker(interval)

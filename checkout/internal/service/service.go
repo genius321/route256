@@ -11,11 +11,11 @@ import (
 	"route256/checkout/internal/pkg/ratelimit"
 	"route256/checkout/internal/pkg/workerpool"
 	"route256/checkout/internal/repository/schema"
-	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/aitsvet/debugcharts"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -113,36 +113,46 @@ func (s *service) ListCart(ctx context.Context, req *checkout.ListCartRequest) (
 
 	wp := workerpool.New[product.GetProductRequest, product.GetProductResponse](worker)
 
-	wg := sync.WaitGroup{}
 	timeStart := time.Now()
+	// для поимки ошибки среди работы множества горутин
+	g := new(errgroup.Group)
 	for i, v := range items {
-		s.Ratelimiter <- struct{}{}
-		wg.Add(1)
-		debugcharts.RPS.Add(1)
-		eitherCh := wp.Exec(ctx,
-			&product.GetProductRequest{
-				Token: config.Token,
-				Sku:   uint32(v.Sku),
-			},
-			s.productClient.GetProduct,
-		)
-		go func(i int, v *schema.Item) {
-			defer wg.Done()
-			either := <-eitherCh
-			log.Println(either.Value)
-			if either.Err != nil {
-				log.Fatalf("get product: %v\n", either.Err)
-			}
-			respItems[i] = &checkout.Item{
-				Sku:   uint32(v.Sku),
-				Count: uint32(v.Amount),
-				Name:  either.Value.Name,
-				Price: either.Value.Price,
-			}
-			totalPrice.Add(int64(either.Value.Price * uint32(v.Amount)))
-		}(i, v)
+		// Если контекст действителен, выполняем работу
+		if err := ctx.Err(); err == nil {
+			s.Ratelimiter <- struct{}{}
+			debugcharts.RPS.Add(1)
+			eitherCh := wp.Exec(ctx,
+				&product.GetProductRequest{
+					Token: config.Token,
+					Sku:   uint32(v.Sku),
+				},
+				s.productClient.GetProduct,
+			)
+			i, v := i, v
+			g.Go(func() error {
+				either := <-eitherCh
+				log.Println(either.Value, either.Err)
+				if either.Err != nil {
+					return either.Err
+				}
+				// у каждого respItems своя ячейка, конкурентности не будет
+				respItems[i] = &checkout.Item{
+					Sku:   uint32(v.Sku),
+					Count: uint32(v.Amount),
+					Name:  either.Value.Name,
+					Price: either.Value.Price,
+				}
+				totalPrice.Add(int64(either.Value.Price * uint32(v.Amount)))
+				return nil
+			})
+		} else {
+			return nil, err
+		}
 	}
-	wg.Wait()
+	if err := g.Wait(); err != nil {
+		log.Println(time.Since(timeStart))
+		return nil, err
+	}
 	log.Println(time.Since(timeStart))
 	return &checkout.ListCartResponse{Items: respItems, TotalPrice: uint32(totalPrice.Load())}, nil
 }

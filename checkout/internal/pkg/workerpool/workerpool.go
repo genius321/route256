@@ -19,16 +19,11 @@ type Either[T any] struct {
 
 func (wp workerpool[I, O]) Exec(ctx context.Context, in *I, work func(context.Context, *I, ...grpc.CallOption) (*O, error)) <-chan Either[O] {
 	result := make(chan Either[O])
-	select {
-	case <-ctx.Done():
-		result <- Either[O]{Err: ctx.Err()}
-	case wp <- struct{}{}:
-		go func() {
-			val, err := work(ctx, in)
-			result <- Either[O]{Value: val, Err: err}
-			close(result)
-			<-wp
-		}()
-	}
+	wp <- struct{}{}
+	go func() {
+		val, err := work(ctx, in)
+		result <- Either[O]{Value: val, Err: err}
+		<-wp
+	}()
 	return result
 }

@@ -7,6 +7,7 @@ import (
 
 type Ratelimit struct {
 	Ratelimiter chan struct{}
+	LastIn      time.Duration
 }
 
 func New(ctx context.Context, limit int) *Ratelimit {

@@ -14,7 +14,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/aitsvet/debugcharts"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -115,39 +114,38 @@ func (s *service) ListCart(ctx context.Context, req *checkout.ListCartRequest) (
 
 	timeStart := time.Now()
 	// для поимки ошибки среди работы множества горутин
-	g := new(errgroup.Group)
+	g, gCtx := errgroup.WithContext(ctx)
 	for i, v := range items {
-		// Если контекст действителен, выполняем работу
-		if err := ctx.Err(); err == nil {
-			s.Ratelimiter <- struct{}{}
-			debugcharts.RPS.Add(1)
-			eitherCh := wp.Exec(ctx,
-				&product.GetProductRequest{
-					Token: config.Token,
-					Sku:   uint32(v.Sku),
-				},
-				s.productClient.GetProduct,
-			)
-			i, v := i, v
-			g.Go(func() error {
-				either := <-eitherCh
-				log.Println(either.Value, either.Err)
-				if either.Err != nil {
-					return either.Err
-				}
-				// у каждого respItems своя ячейка, конкурентности не будет
-				respItems[i] = &checkout.Item{
-					Sku:   uint32(v.Sku),
-					Count: uint32(v.Amount),
-					Name:  either.Value.Name,
-					Price: either.Value.Price,
-				}
-				totalPrice.Add(int64(either.Value.Price * uint32(v.Amount)))
-				return nil
-			})
-		} else {
+		// Проверка действителен ли контекст
+		if err := gCtx.Err(); err != nil {
+			log.Println(time.Since(timeStart))
 			return nil, err
 		}
+		eitherCh := wp.Exec(gCtx,
+			&product.GetProductRequest{
+				Token: config.Token,
+				Sku:   uint32(v.Sku),
+			},
+			s.productClient.GetProduct,
+			&s.Ratelimit,
+		)
+		i, v := i, v
+		g.Go(func() error {
+			either := <-eitherCh
+			log.Println(either.Value, either.Err)
+			if either.Err != nil {
+				return either.Err
+			}
+			// у каждого respItems своя ячейка, конкурентности не будет
+			respItems[i] = &checkout.Item{
+				Sku:   uint32(v.Sku),
+				Count: uint32(v.Amount),
+				Name:  either.Value.Name,
+				Price: either.Value.Price,
+			}
+			totalPrice.Add(int64(either.Value.Price * uint32(v.Amount)))
+			return nil
+		})
 	}
 	if err := g.Wait(); err != nil {
 		log.Println(time.Since(timeStart))

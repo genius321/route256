@@ -28,6 +28,9 @@ import (
 )
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	// reset RPS counter
 	go func() {
 		t := time.NewTicker(time.Second)
@@ -61,7 +64,7 @@ func main() {
 	productClient := product.NewProductServiceClient(connToProduct)
 
 	// connection to db
-	pool, err := pgxpool.Connect(context.Background(), os.Getenv("CHECKOUT_DATABASE_URL"))
+	pool, err := pgxpool.Connect(ctx, os.Getenv("CHECKOUT_DATABASE_URL"))
 	if err != nil {
 		log.Fatalf("connect to db: %v", err)
 	}
@@ -69,7 +72,7 @@ func main() {
 
 	provider := tx.New(pool)
 	repo := postgres.New(provider)
-	ratelimiter := ratelimit.New(context.Background(), config.RateLimit)
+	ratelimiter := ratelimit.New(ctx, config.RateLimit)
 
 	// checkout server setup
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", config.GrpcPort))
@@ -98,7 +101,7 @@ func main() {
 	// Create a client connection to the gRPC server we just started
 	// This is where the gRPC-Gateway proxies the requests
 	conn, err := grpc.DialContext(
-		context.Background(),
+		ctx,
 		lis.Addr().String(),
 		grpc.WithBlock(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -108,7 +111,7 @@ func main() {
 	}
 
 	mux := runtime.NewServeMux()
-	err = checkout.RegisterCheckoutHandler(context.Background(), mux, conn)
+	err = checkout.RegisterCheckoutHandler(ctx, mux, conn)
 	if err != nil {
 		log.Fatalln("Failed to register gateway:", err)
 	}

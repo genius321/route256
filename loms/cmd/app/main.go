@@ -8,9 +8,8 @@ import (
 	"net/http"
 	"os"
 	"route256/loms/internal/pkg/loms"
-	"route256/loms/internal/repository/postgres"
-	"route256/loms/internal/repository/postgres/tx"
 	"route256/loms/internal/service"
+	grpcTransport "route256/loms/internal/transport/grpc"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -32,8 +31,8 @@ func main() {
 	}
 	defer pool.Close()
 
-	provider := tx.New(pool)
-	repo := postgres.New(provider)
+	// provider := tx.New(pool)
+	// repo := postgres.New(provider)
 
 	// loms server setup
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
@@ -43,7 +42,7 @@ func main() {
 
 	s := grpc.NewServer()
 	reflection.Register(s)
-	loms.RegisterLomsServer(s, service.NewLomsServer(repo, provider))
+	loms.RegisterLomsServer(s, grpcTransport.NewGrpc(service.NewService()))
 
 	log.Printf("server listening at %v", lis.Addr())
 

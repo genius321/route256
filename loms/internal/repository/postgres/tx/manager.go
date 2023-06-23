@@ -50,7 +50,7 @@ func (m *Manager) RunRepeatableRead(ctx context.Context, fn func(ctxTx context.C
 	return nil
 }
 
-func (m *Manager) Serializable(ctx context.Context, fn func(ctxTx context.Context) error) error {
+func (m *Manager) RunSerializable(ctx context.Context, fn func(ctxTx context.Context) error) error {
 	tx, err := m.pool.BeginTx(ctx, pgx.TxOptions{
 		IsoLevel: pgx.Serializable,
 	})

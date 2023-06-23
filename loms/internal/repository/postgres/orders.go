@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	orderModels "route256/loms/internal/models/order"
 	"route256/loms/internal/pkg/loms"
 
 	sq "github.com/Masterminds/squirrel"
@@ -11,39 +12,43 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-func (r *Repository) CreateOrder(ctx context.Context, req *loms.CreateOrderRequest) (*loms.CreateOrderResponse, error) {
+func (r *Repository) CreateOrder(
+	ctx context.Context,
+	user orderModels.User,
+	items orderModels.Items,
+) (orderModels.OrderId, error) {
 	db := r.provider.GetDB(ctx)
 
 	query := psql.Insert(tableNameOrders).Columns("user_id").
-		Values(req.User).
+		Values(user).
 		Suffix("RETURNING order_id")
 
 	rawSQL, args, err := query.ToSql()
 	if err != nil {
-		return nil, fmt.Errorf("build query for create order in orders: %s", err)
+		return 0, fmt.Errorf("build query for create order in orders: %s", err)
 	}
 
-	var res loms.CreateOrderResponse
-	err = db.QueryRow(ctx, rawSQL, args...).Scan(&res.OrderId)
-	log.Println("NEW ORDER: ", res.OrderId)
+	var orderId orderModels.OrderId
+	err = db.QueryRow(ctx, rawSQL, args...).Scan(&orderId)
+	log.Println("NEW ORDER: ", orderId)
 	if err != nil {
-		return nil, fmt.Errorf("exec insert order in orders: %w", err)
+		return 0, fmt.Errorf("exec insert order in orders: %w", err)
 	}
 
-	for _, v := range req.Items {
+	for _, v := range items {
 		query = psql.Insert(tableNameOrderItems).Columns("order_id", "sku", "amount").
-			Values(res.OrderId, v.Sku, v.Count)
+			Values(orderId, v.Sku, v.Count)
 		rawSQL, args, err = query.ToSql()
 		if err != nil {
-			return nil, fmt.Errorf("build query for create item in order_items: %s", err)
+			return 0, fmt.Errorf("build query for create item in order_items: %s", err)
 		}
 		_, err = db.Exec(ctx, rawSQL, args...)
 		if err != nil {
-			return nil, fmt.Errorf("exec insert item in order_items: %w", err)
+			return 0, fmt.Errorf("exec insert item in order_items: %w", err)
 		}
 	}
 
-	return &res, nil
+	return orderId, nil
 }
 
 func (r *Repository) ListOrder(ctx context.Context, req *loms.ListOrderRequest) (*loms.ListOrderResponse, error) {

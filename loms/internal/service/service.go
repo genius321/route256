@@ -5,45 +5,28 @@ import (
 	orderModels "route256/loms/internal/models/order"
 )
 
-// type TransactionManager interface {
-// 	RunRepeatableRead(ctx context.Context, fn func(ctxTx context.Context) error) error
-// 	Serializable(ctx context.Context, fn func(ctxTx context.Context) error) error
-// }
-
-// type Repository interface {
-// 	CreateOrder(
-// 		ctx context.Context,
-// 		user orderModels.User,
-// 		items orderModels.Items,
-// 	) (orderModels.OrderId, error)
-// }
-
-// type Transport interface {
-// 	CreateOrder(
-// 		ctx context.Context,
-// 		user orderModels.User,
-// 		items orderModels.Items,
-// 	) (orderModels.OrderId, error)
-// }
-
-type Service struct {
-	// Transport
-	// Repository
-	// TransactionManager
+type TransactionManager interface {
+	RunRepeatableRead(ctx context.Context, fn func(ctxTx context.Context) error) error
+	RunSerializable(ctx context.Context, fn func(ctxTx context.Context) error) error
 }
 
-// func NewService(r Repository, tm TransactionManager) *Service {
-// 	return &Service{Repository: r, TransactionManager: tm}
-// }
+type Repository interface {
+	CreateOrder(
+		ctx context.Context,
+		user orderModels.User,
+		items orderModels.Items,
+	) (orderModels.OrderId, error)
+}
 
-// func NewService(t Transport) *Service {
-// 	return &Service{Transport: t}
-// }
+// ничего не знает про транспортный уровень,
+// но знает, что бд и тракнзакционный мендеджер реализует необходимое поведение
+type Service struct {
+	Repository
+	TransactionManager
+}
 
-// есть просто какой-то бизнес, который отвечает заглушкой
-// он ничего не знает про транспортный уровень
-func NewService() *Service {
-	return &Service{}
+func NewService(r Repository, tm TransactionManager) *Service {
+	return &Service{Repository: r, TransactionManager: tm}
 }
 
 func (s *Service) CreateOrder(
@@ -51,5 +34,5 @@ func (s *Service) CreateOrder(
 	user orderModels.User,
 	items orderModels.Items,
 ) (orderModels.OrderId, error) {
-	return 666, nil
+	return s.Repository.CreateOrder(ctx, user, items)
 }

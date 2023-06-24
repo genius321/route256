@@ -4,6 +4,7 @@
 // - protoc             v4.23.1
 // source: loms.proto
 
+//go:generate mockery --filename lomsClient_mock.go --inpackage --name LomsClient
 package loms
 
 import (

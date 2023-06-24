@@ -1,8 +1,12 @@
+//go:generate mockery --filename repository_mock.go --inpackage --name Repository
+//go:generate mockery --filename tm_mock.go --inpackage --name TransactionManager
+//go:generate mockery --filename lomsClient_mock.go --inpackage --name LomsClient
 package service
 
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"route256/checkout/internal/config"
 	"route256/checkout/internal/pkg/checkout"
@@ -15,6 +19,7 @@ import (
 	"time"
 
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -32,9 +37,17 @@ type Repository interface {
 	SubFromCart(ctx context.Context, userId int64, sku int64, count int64) error
 }
 
-type service struct {
+type LomsClient interface {
+	CreateOrder(ctx context.Context, in *loms.CreateOrderRequest, opts ...grpc.CallOption) (*loms.CreateOrderResponse, error)
+	ListOrder(ctx context.Context, in *loms.ListOrderRequest, opts ...grpc.CallOption) (*loms.ListOrderResponse, error)
+	OrderPayed(ctx context.Context, in *loms.OrderPayedRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	CancelOrder(ctx context.Context, in *loms.CancelOrderRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Stocks(ctx context.Context, in *loms.StocksRequest, opts ...grpc.CallOption) (*loms.StocksResponse, error)
+}
+
+type Service struct {
 	checkout.UnimplementedCheckoutServer
-	lomsClient    loms.LomsClient
+	LomsClient    LomsClient
 	productClient product.ProductServiceClient
 	TransactionManager
 	Repository
@@ -46,9 +59,9 @@ func NewCheckoutServer(lomsClient loms.LomsClient,
 	repo Repository,
 	provider TransactionManager,
 	ratelimiter *ratelimit.Ratelimit,
-) *service {
-	return &service{
-		lomsClient:         lomsClient,
+) *Service {
+	return &Service{
+		LomsClient:         lomsClient,
 		productClient:      productClient,
 		Repository:         repo,
 		TransactionManager: provider,
@@ -61,13 +74,13 @@ const (
 	limit  = 10
 )
 
-func (s *service) AddToCart(ctx context.Context, req *checkout.AddToCartRequest) (*emptypb.Empty, error) {
+func (s *Service) AddToCart(ctx context.Context, req *checkout.AddToCartRequest) (*emptypb.Empty, error) {
 	log.Printf("%+v", req)
 	err := req.ValidateAll()
 	if err != nil {
 		return nil, err
 	}
-	stocksResp, _ := s.lomsClient.Stocks(ctx, &loms.StocksRequest{Sku: req.Sku})
+	stocksResp, _ := s.LomsClient.Stocks(ctx, &loms.StocksRequest{Sku: req.Sku})
 	stocks := stocksResp.Stocks
 	log.Printf("stocks: %v", stocks)
 	counter := int64(req.Count)
@@ -80,7 +93,7 @@ func (s *service) AddToCart(ctx context.Context, req *checkout.AddToCartRequest)
 	return nil, errors.New("stock insufficient")
 }
 
-func (s *service) DeleteFromCart(ctx context.Context, req *checkout.DeleteFromCartRequest) (*emptypb.Empty, error) {
+func (s *Service) DeleteFromCart(ctx context.Context, req *checkout.DeleteFromCartRequest) (*emptypb.Empty, error) {
 	log.Printf("%+v", req)
 	err := req.ValidateAll()
 	if err != nil {
@@ -96,7 +109,7 @@ func (s *service) DeleteFromCart(ctx context.Context, req *checkout.DeleteFromCa
 	return s.Repository.DeleteFromCart(ctx, req)
 }
 
-func (s *service) ListCart(ctx context.Context, req *checkout.ListCartRequest) (*checkout.ListCartResponse, error) {
+func (s *Service) ListCart(ctx context.Context, req *checkout.ListCartRequest) (*checkout.ListCartResponse, error) {
 	log.Printf("%+v", req)
 	err := req.ValidateAll()
 	if err != nil {
@@ -155,7 +168,7 @@ func (s *service) ListCart(ctx context.Context, req *checkout.ListCartRequest) (
 	return &checkout.ListCartResponse{Items: respItems, TotalPrice: uint32(totalPrice.Load())}, nil
 }
 
-func (s *service) Purchase(ctx context.Context, req *checkout.PurchaseRequest) (*checkout.PurchaseResponse, error) {
+func (s *Service) Purchase(ctx context.Context, req *checkout.PurchaseRequest) (*checkout.PurchaseResponse, error) {
 	log.Printf("%+v", req)
 	err := req.ValidateAll()
 	if err != nil {
@@ -173,16 +186,17 @@ func (s *service) Purchase(ctx context.Context, req *checkout.PurchaseRequest) (
 		})
 	}
 	var createOrderResp *loms.CreateOrderResponse
-	err = s.Serializable(ctx, func(ctxTx context.Context) error {
-		createOrderResp, err = s.lomsClient.CreateOrder(ctx, &loms.CreateOrderRequest{
-			User:  req.User,
-			Items: respItems,
-		})
-		if err != nil {
-			return err
-		}
-		_, err := s.Repository.DeleteAllFromCart(ctx, &checkout.DeleteFromCartRequest{User: req.User})
-		return err
+	createOrderResp, err = s.LomsClient.CreateOrder(ctx, &loms.CreateOrderRequest{
+		User:  req.User,
+		Items: respItems,
 	})
+	if err != nil {
+		return nil, fmt.Errorf("purchase: %w", err)
+	}
+	_, err = s.Repository.DeleteAllFromCart(ctx, &checkout.DeleteFromCartRequest{User: req.User})
+
+	if err != nil {
+		return nil, fmt.Errorf("purchase: %w", err)
+	}
 	return &checkout.PurchaseResponse{OrderId: createOrderResp.OrderId}, nil
 }

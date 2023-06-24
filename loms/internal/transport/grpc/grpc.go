@@ -8,6 +8,8 @@ import (
 	stockModels "route256/loms/internal/models/stock"
 	"route256/loms/internal/pkg/loms"
 	"route256/loms/internal/service"
+
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type Grpc struct {
@@ -90,4 +92,32 @@ func (g *Grpc) ListOrder(ctx context.Context, req *loms.ListOrderRequest) (*loms
 		User:   int64(user),
 		Items:  resItems,
 	}, nil
+}
+
+func (g *Grpc) OrderPayed(ctx context.Context, req *loms.OrderPayedRequest) (*emptypb.Empty, error) {
+	log.Printf("%+v", req)
+	err := req.ValidateAll()
+	if err != nil {
+		return nil, err
+	}
+
+	err = g.service.OrderPayed(ctx, orderModels.OrderId(req.OrderId))
+	if err != nil {
+		return nil, fmt.Errorf("orderPayed: %w", err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
+func (g *Grpc) CancelOrder(ctx context.Context, req *loms.CancelOrderRequest) (*emptypb.Empty, error) {
+	log.Printf("%+v", req)
+	err := req.ValidateAll()
+	if err != nil {
+		return nil, err
+	}
+
+	err = g.service.CancelOrder(ctx, orderModels.OrderId(req.OrderId))
+	if err != nil {
+		return nil, fmt.Errorf("cancelOrder: %w", err)
+	}
+	return &emptypb.Empty{}, nil
 }

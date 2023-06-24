@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	orderModels "route256/loms/internal/models/order"
 	stockModels "route256/loms/internal/models/stock"
 	"route256/loms/internal/repository/schema"
 
@@ -22,11 +23,7 @@ func (r *Repository) Stocks(ctx context.Context, sku stockModels.Sku) (stockMode
 		return nil, fmt.Errorf("build query for get stocks: %s", err)
 	}
 
-	// думал вынести в модель на этом слое, но не придумал название
-	var resultSQL []struct {
-		WarehouseID int64 `db:"warehouse_id"`
-		Count       int64 `db:"amount"`
-	}
+	var resultSQL []schema.Stock
 
 	err = pgxscan.Select(ctx, db, &resultSQL, rawSQL, args...)
 	if err != nil {
@@ -37,20 +34,21 @@ func (r *Repository) Stocks(ctx context.Context, sku stockModels.Sku) (stockMode
 	for _, v := range resultSQL {
 		stocks = append(stocks, stockModels.Stock{
 			WarehouseId: stockModels.WarehouseId(v.WarehouseID),
-			Count:       stockModels.Count(v.Count),
+			Count:       stockModels.Count(v.Amount),
 		})
 	}
 
 	return stocks, nil
 }
 
-func (r *Repository) AddSkuStockReserve(ctx context.Context, sku int64, amount int64, warehouseID int64, orderId int64) error {
+func (r *Repository) AddSkuStockReserve(
+	ctx context.Context, stockWithSku stockModels.StockWithSku, orderId orderModels.OrderId) error {
 	db := r.provider.GetDB(ctx)
 	query := `
 INSERT INTO sku_stocks_reservation("sku", "warehouse_id", "order_id", "amount") VALUES 
     ($1, $2, $3, $4)
 `
-	_, err := db.Exec(ctx, query, sku, warehouseID, orderId, amount)
+	_, err := db.Exec(ctx, query, stockWithSku.Sku, stockWithSku.WarehouseId, orderId, stockWithSku.Count)
 	if err != nil {
 		return fmt.Errorf("exec insert reservation: %w", err)
 	}
@@ -58,7 +56,7 @@ INSERT INTO sku_stocks_reservation("sku", "warehouse_id", "order_id", "amount") 
 	return nil
 }
 
-func (r *Repository) DeleteStocksReserveByOrderId(ctx context.Context, orderId int64) error {
+func (r *Repository) DeleteStocksReserveByOrderId(ctx context.Context, orderId orderModels.OrderId) error {
 	db := r.provider.GetDB(ctx)
 	query := psql.Delete(tableNameSkuStocksReservation).
 		Where(sq.Eq{"order_id": orderId})
@@ -73,7 +71,10 @@ func (r *Repository) DeleteStocksReserveByOrderId(ctx context.Context, orderId i
 	return nil
 }
 
-func (r *Repository) TakeStocksReserveByOrderId(ctx context.Context, orderId int64) ([]schema.Stocks, error) {
+func (r *Repository) TakeStocksReserveByOrderId(
+	ctx context.Context,
+	orderId orderModels.OrderId,
+) (stockModels.StocksWithSku, error) {
 	db := r.provider.GetDB(ctx)
 	query := psql.Select("sku", "warehouse_id", "amount").
 		From(tableNameSkuStocksReservation).
@@ -82,16 +83,24 @@ func (r *Repository) TakeStocksReserveByOrderId(ctx context.Context, orderId int
 	if err != nil {
 		return nil, fmt.Errorf("build query for select stocks reserve by orderId: %s", err)
 	}
-	var resultSQL []schema.Stocks
+
+	var resultSQL []schema.StockWithSku
 
 	err = pgxscan.Select(ctx, db, &resultSQL, rawSQL, args...)
 	if err != nil {
 		return nil, fmt.Errorf("exec query for select stocks reserve by orderId: %s", err)
 	}
-	return resultSQL, nil
+
+	res := make(stockModels.StocksWithSku, len(resultSQL))
+	for i, v := range resultSQL {
+		res[i].Sku = stockModels.Sku(v.Sku)
+		res[i].WarehouseId = stockModels.WarehouseId(v.WarehouseID)
+		res[i].Count = stockModels.Count(v.Amount)
+	}
+	return res, nil
 }
 
-func (r *Repository) AddSkuStock(ctx context.Context, sku int64, amount int64, warehouseID int64) error {
+func (r *Repository) AddSkuStock(ctx context.Context, stockWithSku stockModels.StockWithSku) error {
 	db := r.provider.GetDB(ctx)
 	query := `
 INSERT INTO sku_stocks("sku", "warehouse_id", "amount") VALUES 
@@ -100,7 +109,7 @@ ON CONFLICT ("sku", "warehouse_id") DO UPDATE
 	SET amount=sku_stocks.amount+$3
 `
 
-	_, err := db.Exec(ctx, query, sku, warehouseID, amount)
+	_, err := db.Exec(ctx, query, stockWithSku.Sku, stockWithSku.WarehouseId, stockWithSku.Count)
 	if err != nil {
 		return fmt.Errorf("exec insert stocks: %w", err)
 	}
@@ -108,7 +117,8 @@ ON CONFLICT ("sku", "warehouse_id") DO UPDATE
 	return nil
 }
 
-func (r *Repository) TakeSkuStock(ctx context.Context, sku int64, amount int64, warehouseID int64) (int64, error) {
+func (r *Repository) TakeSkuStock(
+	ctx context.Context, stockWithSku stockModels.StockWithSku) (stockModels.Count, error) {
 	db := r.provider.GetDB(ctx)
 	query := `
 INSERT INTO sku_stocks("sku", "warehouse_id", "amount") VALUES 
@@ -118,8 +128,8 @@ ON CONFLICT ("sku", "warehouse_id") DO UPDATE
 RETURNING amount;
 `
 
-	var cnt int64
-	err := db.QueryRow(ctx, query, sku, warehouseID, amount).Scan(&cnt)
+	var cnt stockModels.Count
+	err := db.QueryRow(ctx, query, stockWithSku.Sku, stockWithSku.WarehouseId, stockWithSku.Count).Scan(&cnt)
 	if err != nil {
 		return 0, fmt.Errorf("exec insert stocks: %w", err)
 	}

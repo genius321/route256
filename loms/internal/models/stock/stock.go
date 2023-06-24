@@ -12,3 +12,10 @@ type Stock struct {
 type WarehouseId int64
 
 type Count uint64
+
+type StocksWithSku []StockWithSku
+
+type StockWithSku struct {
+	Sku Sku
+	Stock
+}

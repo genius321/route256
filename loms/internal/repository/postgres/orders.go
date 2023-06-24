@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"log"
 	orderModels "route256/loms/internal/models/order"
-	"route256/loms/internal/pkg/loms"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/pgxscan"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 func (r *Repository) CreateOrder(
@@ -98,34 +96,34 @@ func (r *Repository) ListOrder(
 	return status, user, items, nil
 }
 
-func (r *Repository) OrderPayed(ctx context.Context, req *loms.OrderPayedRequest) (*emptypb.Empty, error) {
+func (r *Repository) OrderPayed(ctx context.Context, orderId orderModels.OrderId) error {
 	db := r.provider.GetDB(ctx)
 	query := psql.Update(tableNameOrders).
 		Set("status_name", "payed").
-		Where(sq.Eq{"order_id": req.OrderId})
+		Where(sq.Eq{"order_id": orderId})
 	rawSQL, args, err := query.ToSql()
 	if err != nil {
-		return nil, fmt.Errorf("build update status_name OrderPayed: %s", err)
+		return fmt.Errorf("build update status_name OrderPayed: %s", err)
 	}
 	_, err = db.Exec(ctx, rawSQL, args...)
 	if err != nil {
-		return nil, fmt.Errorf("exec update status_name OrderPayed: %w", err)
+		return fmt.Errorf("exec update status_name OrderPayed: %w", err)
 	}
-	return &emptypb.Empty{}, nil
+	return nil
 }
 
-func (r *Repository) CancelOrder(ctx context.Context, req *loms.CancelOrderRequest) (*emptypb.Empty, error) {
+func (r *Repository) CancelOrder(ctx context.Context, orderId orderModels.OrderId) error {
 	db := r.provider.GetDB(ctx)
 	query := psql.Update(tableNameOrders).
 		Set("status_name", "cancelled").
-		Where(sq.Eq{"order_id": req.OrderId})
+		Where(sq.Eq{"order_id": orderId})
 	rawSQL, args, err := query.ToSql()
 	if err != nil {
-		return nil, fmt.Errorf("build update status_name CancelOrder: %s", err)
+		return fmt.Errorf("build update status_name CancelOrder: %s", err)
 	}
 	_, err = db.Exec(ctx, rawSQL, args...)
 	if err != nil {
-		return nil, fmt.Errorf("exec update status_name CancelOrder: %w", err)
+		return fmt.Errorf("exec update status_name CancelOrder: %w", err)
 	}
-	return &emptypb.Empty{}, nil
+	return nil
 }

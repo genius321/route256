@@ -10,18 +10,23 @@ import (
 )
 
 type TransactionManager interface {
-	RunRepeatableRead(ctx context.Context, fn func(ctxTx context.Context) error) error
-	RunSerializable(ctx context.Context, fn func(ctxTx context.Context) error) error
+	RunRepeatableRead(context.Context, func(ctxTx context.Context) error) error
+	RunSerializable(context.Context, func(ctxTx context.Context) error) error
 }
 
 type Repository interface {
 	CreateOrder(context.Context, orderModels.User, orderModels.Items) (orderModels.OrderId, error)
-	ListOrder(context.Context, orderModels.OrderId) (orderModels.Status, orderModels.User, orderModels.Items, error)
+	ListOrder(context.Context, orderModels.OrderId) (
+		orderModels.Status, orderModels.User, orderModels.Items, error)
+	OrderPayed(context.Context, orderModels.OrderId) error
+	CancelOrder(context.Context, orderModels.OrderId) error
 
 	Stocks(context.Context, stockModels.Sku) (stockModels.Stocks, error)
-	TakeSkuStock(ctx context.Context, sku int64, amount int64, warehouseID int64) (int64, error)
-	AddSkuStockReserve(ctx context.Context, sku int64, amount int64, warehouseID int64, orderId int64) error
-	// AddSkuStock(ctx context.Context, sku int64, amount int64, warehouseID int64) error
+	TakeSkuStock(context.Context, stockModels.StockWithSku) (stockModels.Count, error)
+	AddSkuStockReserve(context.Context, stockModels.StockWithSku, orderModels.OrderId) error
+	DeleteStocksReserveByOrderId(context.Context, orderModels.OrderId) error
+	TakeStocksReserveByOrderId(context.Context, orderModels.OrderId) (stockModels.StocksWithSku, error)
+	AddSkuStock(context.Context, stockModels.StockWithSku) error
 }
 
 // ничего не знает про транспортный уровень,
@@ -54,11 +59,26 @@ func (s *Service) CreateOrder(
 			}
 			log.Println(warehouseIdReserveCnt)
 			for warehouseID, reserveCnt := range warehouseIdReserveCnt {
-				_, err = s.Repository.TakeSkuStock(ctxTx, int64(v.Sku), reserveCnt, warehouseID)
+				_, err = s.Repository.TakeSkuStock(ctxTx, stockModels.StockWithSku{
+					Sku: stockModels.Sku(v.Sku),
+					Stock: stockModels.Stock{
+						WarehouseId: stockModels.WarehouseId(warehouseID),
+						Count:       stockModels.Count(reserveCnt),
+					},
+				})
 				if err != nil {
 					return err
 				}
-				err = s.Repository.AddSkuStockReserve(ctxTx, int64(v.Sku), reserveCnt, warehouseID, int64(orderId))
+				err = s.Repository.AddSkuStockReserve(
+					ctxTx,
+					stockModels.StockWithSku{
+						Sku: stockModels.Sku(v.Sku),
+						Stock: stockModels.Stock{
+							WarehouseId: stockModels.WarehouseId(warehouseID),
+							Count:       stockModels.Count(reserveCnt),
+						},
+					},
+					orderId)
 				if err != nil {
 					return err
 				}
@@ -125,4 +145,41 @@ func (s *Service) ListOrder(
 	orderId orderModels.OrderId,
 ) (orderModels.Status, orderModels.User, orderModels.Items, error) {
 	return s.Repository.ListOrder(ctx, orderId)
+}
+
+func (s *Service) OrderPayed(ctx context.Context, orderId orderModels.OrderId) error {
+	err := s.RunSerializable(ctx, func(ctxTx context.Context) error {
+		err := s.Repository.DeleteStocksReserveByOrderId(ctxTx, orderId)
+		if err != nil {
+			return err
+		}
+		err = s.Repository.OrderPayed(ctxTx, orderId)
+		return err
+	})
+	if err != nil {
+		return fmt.Errorf("order payed: %w", err)
+	}
+	return nil
+}
+
+func (s *Service) CancelOrder(ctx context.Context, orderId orderModels.OrderId) error {
+	err := s.RunSerializable(ctx, func(ctxTx context.Context) error {
+		reserve, err := s.Repository.TakeStocksReserveByOrderId(ctxTx, orderId)
+		if err != nil {
+			return err
+		}
+		for _, v := range reserve {
+			s.Repository.AddSkuStock(ctxTx, v)
+		}
+		err = s.Repository.DeleteStocksReserveByOrderId(ctxTx, orderId)
+		if err != nil {
+			return err
+		}
+		err = s.Repository.CancelOrder(ctxTx, orderId)
+		return err
+	})
+	if err != nil {
+		return fmt.Errorf("cancel order: %w", err)
+	}
+	return nil
 }

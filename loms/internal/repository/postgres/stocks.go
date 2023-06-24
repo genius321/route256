@@ -3,24 +3,26 @@ package postgres
 import (
 	"context"
 	"fmt"
-	"route256/loms/internal/pkg/loms"
+	stockModels "route256/loms/internal/models/stock"
 	"route256/loms/internal/repository/schema"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/pgxscan"
 )
 
-func (r *Repository) Stocks(ctx context.Context, req *loms.StocksRequest) (*loms.StocksResponse, error) {
+func (r *Repository) Stocks(ctx context.Context, sku stockModels.Sku) (stockModels.Stocks, error) {
 	db := r.provider.GetDB(ctx)
+
 	query := psql.Select("warehouse_id", "amount").
 		From(tableNameSkuStocks).
-		Where(sq.Eq{"sku": req.Sku})
+		Where(sq.Eq{"sku": sku})
 
 	rawSQL, args, err := query.ToSql()
 	if err != nil {
 		return nil, fmt.Errorf("build query for get stocks: %s", err)
 	}
 
+	// думал вынести в модель на этом слое, но не придумал название
 	var resultSQL []struct {
 		WarehouseID int64 `db:"warehouse_id"`
 		Count       int64 `db:"amount"`
@@ -31,19 +33,18 @@ func (r *Repository) Stocks(ctx context.Context, req *loms.StocksRequest) (*loms
 		return nil, fmt.Errorf("exec query get stocks: %s", err)
 	}
 
-	var res loms.StocksResponse
-	res.Stocks = make([]*loms.Stock, 0, len(resultSQL))
+	stocks := make(stockModels.Stocks, 0, len(resultSQL))
 	for _, v := range resultSQL {
-		res.Stocks = append(res.Stocks, &loms.Stock{
-			WarehouseId: v.WarehouseID,
-			Count:       uint64(v.Count),
+		stocks = append(stocks, stockModels.Stock{
+			WarehouseId: stockModels.WarehouseId(v.WarehouseID),
+			Count:       stockModels.Count(v.Count),
 		})
 	}
 
-	return &res, nil
+	return stocks, nil
 }
 
-func (r *Repository) AddSkuStockReserve(ctx context.Context, sku int64, amount int64, warehouseID int64, orderId int64) (int64, error) {
+func (r *Repository) AddSkuStockReserve(ctx context.Context, sku int64, amount int64, warehouseID int64, orderId int64) error {
 	db := r.provider.GetDB(ctx)
 	query := `
 INSERT INTO sku_stocks_reservation("sku", "warehouse_id", "order_id", "amount") VALUES 
@@ -51,10 +52,10 @@ INSERT INTO sku_stocks_reservation("sku", "warehouse_id", "order_id", "amount") 
 `
 	_, err := db.Exec(ctx, query, sku, warehouseID, orderId, amount)
 	if err != nil {
-		return 0, fmt.Errorf("exec insert reservation: %w", err)
+		return fmt.Errorf("exec insert reservation: %w", err)
 	}
 
-	return amount, nil
+	return nil
 }
 
 func (r *Repository) DeleteStocksReserveByOrderId(ctx context.Context, orderId int64) error {
@@ -90,23 +91,21 @@ func (r *Repository) TakeStocksReserveByOrderId(ctx context.Context, orderId int
 	return resultSQL, nil
 }
 
-func (r *Repository) AddSkuStock(ctx context.Context, sku int64, amount int64, warehouseID int64) (int64, error) {
+func (r *Repository) AddSkuStock(ctx context.Context, sku int64, amount int64, warehouseID int64) error {
 	db := r.provider.GetDB(ctx)
 	query := `
 INSERT INTO sku_stocks("sku", "warehouse_id", "amount") VALUES 
     ($1, $2, $3)
 ON CONFLICT ("sku", "warehouse_id") DO UPDATE 
 	SET amount=sku_stocks.amount+$3
-RETURNING amount;
 `
 
-	var cnt int64
-	err := db.QueryRow(ctx, query, sku, warehouseID, amount).Scan(&cnt)
+	_, err := db.Exec(ctx, query, sku, warehouseID, amount)
 	if err != nil {
-		return 0, fmt.Errorf("exec insert stocks: %w", err)
+		return fmt.Errorf("exec insert stocks: %w", err)
 	}
 
-	return cnt, nil
+	return nil
 }
 
 func (r *Repository) TakeSkuStock(ctx context.Context, sku int64, amount int64, warehouseID int64) (int64, error) {

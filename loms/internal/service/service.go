@@ -16,6 +16,7 @@ type TransactionManager interface {
 
 type Repository interface {
 	CreateOrder(context.Context, orderModels.User, orderModels.Items) (orderModels.OrderId, error)
+	ListOrder(context.Context, orderModels.OrderId) (orderModels.Status, orderModels.User, orderModels.Items, error)
 
 	Stocks(context.Context, stockModels.Sku) (stockModels.Stocks, error)
 	TakeSkuStock(ctx context.Context, sku int64, amount int64, warehouseID int64) (int64, error)
@@ -117,4 +118,11 @@ func (s *Service) ReserveStock(
 
 func (s *Service) Stocks(ctx context.Context, sku stockModels.Sku) (stockModels.Stocks, error) {
 	return s.Repository.Stocks(ctx, sku)
+}
+
+func (s *Service) ListOrder(
+	ctx context.Context,
+	orderId orderModels.OrderId,
+) (orderModels.Status, orderModels.User, orderModels.Items, error) {
+	return s.Repository.ListOrder(ctx, orderId)
 }

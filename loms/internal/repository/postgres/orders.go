@@ -51,27 +51,33 @@ func (r *Repository) CreateOrder(
 	return orderId, nil
 }
 
-func (r *Repository) ListOrder(ctx context.Context, req *loms.ListOrderRequest) (*loms.ListOrderResponse, error) {
+func (r *Repository) ListOrder(
+	ctx context.Context,
+	orderId orderModels.OrderId,
+) (orderModels.Status, orderModels.User, orderModels.Items, error) {
 	db := r.provider.GetDB(ctx)
 	query := psql.Select("status_name", "user_id").
 		From(tableNameOrders).
-		Where(sq.Eq{"order_id": req.OrderId})
+		Where(sq.Eq{"order_id": orderId})
 	rawSQL, args, err := query.ToSql()
 	if err != nil {
-		return nil, fmt.Errorf("build query ListOrder: %s", err)
+		return "", 0, nil, fmt.Errorf("build query ListOrder: %s", err)
 	}
-	var res loms.ListOrderResponse
-	err = db.QueryRow(ctx, rawSQL, args...).Scan(&res.Status, &res.User)
+	var (
+		status orderModels.Status
+		user   orderModels.User
+	)
+	err = db.QueryRow(ctx, rawSQL, args...).Scan(&status, &user)
 	if err != nil {
-		return nil, fmt.Errorf("exec query ListOrder: %w", err)
+		return "", 0, nil, fmt.Errorf("exec query ListOrder: %w", err)
 	}
 
 	query = psql.Select("sku", "amount").
 		From(tableNameOrderItems).
-		Where(sq.Eq{"order_id": req.OrderId})
+		Where(sq.Eq{"order_id": orderId})
 	rawSQL, args, err = query.ToSql()
 	if err != nil {
-		return nil, fmt.Errorf("build query ListOrder: %s", err)
+		return "", 0, nil, fmt.Errorf("build query ListOrder: %s", err)
 	}
 	var resultSQL []struct {
 		Sku   int64 `db:"sku"`
@@ -79,14 +85,17 @@ func (r *Repository) ListOrder(ctx context.Context, req *loms.ListOrderRequest) 
 	}
 	err = pgxscan.Select(ctx, db, &resultSQL, rawSQL, args...)
 	if err != nil {
-		return nil, fmt.Errorf("exec query ListOrder: %w", err)
+		return "", 0, nil, fmt.Errorf("exec query ListOrder: %w", err)
 	}
 
-	res.Items = make([]*loms.Item, 0, len(resultSQL))
+	items := make(orderModels.Items, 0, len(resultSQL))
 	for _, v := range resultSQL {
-		res.Items = append(res.Items, &loms.Item{Sku: uint32(v.Sku), Count: uint32(v.Count)})
+		items = append(items, orderModels.Item{
+			Sku:   orderModels.Sku(v.Sku),
+			Count: orderModels.Count(v.Count),
+		})
 	}
-	return &res, nil
+	return status, user, items, nil
 }
 
 func (r *Repository) OrderPayed(ctx context.Context, req *loms.OrderPayedRequest) (*emptypb.Empty, error) {

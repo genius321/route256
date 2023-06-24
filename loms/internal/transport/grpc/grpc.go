@@ -65,3 +65,29 @@ func (g *Grpc) Stocks(ctx context.Context, req *loms.StocksRequest) (*loms.Stock
 
 	return &loms.StocksResponse{Stocks: resStocks}, nil
 }
+
+func (g *Grpc) ListOrder(ctx context.Context, req *loms.ListOrderRequest) (*loms.ListOrderResponse, error) {
+	log.Printf("%+v", req)
+	err := req.ValidateAll()
+	if err != nil {
+		return nil, err
+	}
+
+	orderId := orderModels.OrderId(req.OrderId)
+
+	status, user, items, err := g.service.ListOrder(ctx, orderId)
+	if err != nil {
+		return nil, fmt.Errorf("listOrder: %w", err)
+	}
+
+	resItems := make([]*loms.Item, 0, len(items))
+	for _, v := range items {
+		resItems = append(resItems, &loms.Item{Sku: uint32(v.Sku), Count: uint32(v.Count)})
+	}
+
+	return &loms.ListOrderResponse{
+		Status: string(status),
+		User:   int64(user),
+		Items:  resItems,
+	}, nil
+}

@@ -5,9 +5,9 @@ go 1.19
 require (
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/aitsvet/debugcharts v0.0.0-20230609130001-9c8498565d01
-	github.com/brianvoe/gofakeit v3.18.0+incompatible
 	github.com/envoyproxy/protoc-gen-validate v0.10.0
 	github.com/georgysavva/scany v1.2.1
+	github.com/gojuno/minimock/v3 v3.1.3
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.16.0
 	github.com/jackc/pgconn v1.14.0
 	github.com/jackc/pgx/v4 v4.18.1
@@ -35,7 +35,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.10.0 // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
-	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.9 // indirect
 	github.com/tklauser/numcpus v0.3.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect

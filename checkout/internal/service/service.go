@@ -1,6 +1,6 @@
-//go:generate mockery --filename repository_mock.go --inpackage --name Repository
-//go:generate mockery --filename tm_mock.go --inpackage --name TransactionManager
-//go:generate mockery --filename lomsClient_mock.go --inpackage --name LomsClient
+//go:generate minimock -i Repository -o ./mocks/ -s "_minimock.go" -g
+//go:generate minimock -i TransactionManager -o ./mocks/ -s "_minimock.go" -g
+//go:generate minimock -i LomsClient -o ./mocks/ -s "_minimock.go" -g
 package service
 
 import (
@@ -47,7 +47,7 @@ type LomsClient interface {
 
 type Service struct {
 	checkout.UnimplementedCheckoutServer
-	LomsClient    LomsClient
+	LomsClient
 	productClient product.ProductServiceClient
 	TransactionManager
 	Repository

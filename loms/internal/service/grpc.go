@@ -1,27 +1,27 @@
-package grpc
+package service
 
 import (
 	"context"
 	"fmt"
 	"log"
+	"route256/loms/internal/business"
 	orderModels "route256/loms/internal/models/order"
 	stockModels "route256/loms/internal/models/stock"
 	"route256/loms/internal/pkg/loms"
-	"route256/loms/internal/service"
 
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-type Grpc struct {
+type Service struct {
 	loms.UnimplementedLomsServer
-	service *service.Service
+	service *business.Business
 }
 
-func NewGrpc(service *service.Service) *Grpc {
-	return &Grpc{service: service}
+func NewService(service *business.Business) *Service {
+	return &Service{service: service}
 }
 
-func (g *Grpc) CreateOrder(ctx context.Context, req *loms.CreateOrderRequest) (*loms.CreateOrderResponse, error) {
+func (g *Service) CreateOrder(ctx context.Context, req *loms.CreateOrderRequest) (*loms.CreateOrderResponse, error) {
 	log.Printf("%+v", req)
 	err := req.ValidateAll()
 	if err != nil {
@@ -43,7 +43,7 @@ func (g *Grpc) CreateOrder(ctx context.Context, req *loms.CreateOrderRequest) (*
 	return &loms.CreateOrderResponse{OrderId: int64(orderId)}, nil
 }
 
-func (g *Grpc) Stocks(ctx context.Context, req *loms.StocksRequest) (*loms.StocksResponse, error) {
+func (g *Service) Stocks(ctx context.Context, req *loms.StocksRequest) (*loms.StocksResponse, error) {
 	log.Printf("%+v", req)
 	err := req.ValidateAll()
 	if err != nil {
@@ -68,7 +68,7 @@ func (g *Grpc) Stocks(ctx context.Context, req *loms.StocksRequest) (*loms.Stock
 	return &loms.StocksResponse{Stocks: resStocks}, nil
 }
 
-func (g *Grpc) ListOrder(ctx context.Context, req *loms.ListOrderRequest) (*loms.ListOrderResponse, error) {
+func (g *Service) ListOrder(ctx context.Context, req *loms.ListOrderRequest) (*loms.ListOrderResponse, error) {
 	log.Printf("%+v", req)
 	err := req.ValidateAll()
 	if err != nil {
@@ -94,7 +94,7 @@ func (g *Grpc) ListOrder(ctx context.Context, req *loms.ListOrderRequest) (*loms
 	}, nil
 }
 
-func (g *Grpc) OrderPayed(ctx context.Context, req *loms.OrderPayedRequest) (*emptypb.Empty, error) {
+func (g *Service) OrderPayed(ctx context.Context, req *loms.OrderPayedRequest) (*emptypb.Empty, error) {
 	log.Printf("%+v", req)
 	err := req.ValidateAll()
 	if err != nil {
@@ -108,7 +108,7 @@ func (g *Grpc) OrderPayed(ctx context.Context, req *loms.OrderPayedRequest) (*em
 	return &emptypb.Empty{}, nil
 }
 
-func (g *Grpc) CancelOrder(ctx context.Context, req *loms.CancelOrderRequest) (*emptypb.Empty, error) {
+func (g *Service) CancelOrder(ctx context.Context, req *loms.CancelOrderRequest) (*emptypb.Empty, error) {
 	log.Printf("%+v", req)
 	err := req.ValidateAll()
 	if err != nil {

@@ -1,4 +1,4 @@
-package service
+package business
 
 import (
 	"context"
@@ -31,16 +31,16 @@ type Repository interface {
 
 // ничего не знает про транспортный уровень,
 // но знает, что бд и тракнзакционный мендеджер реализуют необходимое поведение
-type Service struct {
+type Business struct {
 	Repository
 	TransactionManager
 }
 
-func NewService(r Repository, tm TransactionManager) *Service {
-	return &Service{Repository: r, TransactionManager: tm}
+func NewBusiness(r Repository, tm TransactionManager) *Business {
+	return &Business{Repository: r, TransactionManager: tm}
 }
 
-func (s *Service) CreateOrder(
+func (s *Business) CreateOrder(
 	ctx context.Context,
 	user orderModels.User,
 	items orderModels.Items,
@@ -95,7 +95,7 @@ func (s *Service) CreateOrder(
 
 type mWarehouseIdReserveCnt map[int64]int64
 
-func (s *Service) ReserveStock(
+func (s *Business) ReserveStock(
 	ctx context.Context,
 	sku stockModels.Sku,
 	count stockModels.Count,
@@ -136,18 +136,18 @@ func (s *Service) ReserveStock(
 	return warehouseIdReserveCnt, nil
 }
 
-func (s *Service) Stocks(ctx context.Context, sku stockModels.Sku) (stockModels.Stocks, error) {
+func (s *Business) Stocks(ctx context.Context, sku stockModels.Sku) (stockModels.Stocks, error) {
 	return s.Repository.Stocks(ctx, sku)
 }
 
-func (s *Service) ListOrder(
+func (s *Business) ListOrder(
 	ctx context.Context,
 	orderId orderModels.OrderId,
 ) (orderModels.Status, orderModels.User, orderModels.Items, error) {
 	return s.Repository.ListOrder(ctx, orderId)
 }
 
-func (s *Service) OrderPayed(ctx context.Context, orderId orderModels.OrderId) error {
+func (s *Business) OrderPayed(ctx context.Context, orderId orderModels.OrderId) error {
 	err := s.RunSerializable(ctx, func(ctxTx context.Context) error {
 		err := s.Repository.DeleteStocksReserveByOrderId(ctxTx, orderId)
 		if err != nil {
@@ -162,7 +162,7 @@ func (s *Service) OrderPayed(ctx context.Context, orderId orderModels.OrderId) e
 	return nil
 }
 
-func (s *Service) CancelOrder(ctx context.Context, orderId orderModels.OrderId) error {
+func (s *Business) CancelOrder(ctx context.Context, orderId orderModels.OrderId) error {
 	err := s.RunSerializable(ctx, func(ctxTx context.Context) error {
 		reserve, err := s.Repository.TakeStocksReserveByOrderId(ctxTx, orderId)
 		if err != nil {

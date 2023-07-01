@@ -8,10 +8,12 @@ import (
 	"net/http"
 	"os"
 	"route256/loms/internal/business"
+	"route256/loms/internal/kafka"
 	"route256/loms/internal/pkg/loms"
 	"route256/loms/internal/repository/postgres"
 	"route256/loms/internal/repository/postgres/tx"
 	"route256/loms/internal/service"
+	"route256/loms/internal/status"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -26,6 +28,18 @@ const (
 )
 
 func main() {
+	// kafkaProducer
+	var brokers = []string{
+		"kafka1:29091",
+		"kafka2:29092",
+		"kafka3:29093",
+	}
+	kafkaProducer, err := kafka.NewProducer(brokers)
+	if err != nil {
+		log.Fatal(err)
+	}
+	statusSender := status.NewKafkaSender(kafkaProducer, "statuses")
+
 	// connection to db
 	pool, err := pgxpool.Connect(context.Background(), os.Getenv("LOMS_DATABASE_URL"))
 	if err != nil {
@@ -44,7 +58,7 @@ func main() {
 
 	s := grpc.NewServer()
 	reflection.Register(s)
-	loms.RegisterLomsServer(s, service.NewService(business.NewBusiness(repo, provider)))
+	loms.RegisterLomsServer(s, service.NewService(business.NewBusiness(repo, provider, statusSender)))
 
 	log.Printf("server listening at %v", lis.Addr())
 

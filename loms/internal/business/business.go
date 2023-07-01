@@ -29,15 +29,18 @@ type Repository interface {
 	AddSkuStock(context.Context, stockModels.StockWithSku) error
 }
 
-// ничего не знает про транспортный уровень,
-// но знает, что бд и тракнзакционный мендеджер реализуют необходимое поведение
+type Sender interface {
+	SendMessage(orderModels.OrderId, orderModels.Status) error
+}
+
 type Business struct {
 	Repository
 	TransactionManager
+	Sender
 }
 
-func NewBusiness(r Repository, tm TransactionManager) *Business {
-	return &Business{Repository: r, TransactionManager: tm}
+func NewBusiness(r Repository, tm TransactionManager, sender Sender) *Business {
+	return &Business{Repository: r, TransactionManager: tm, Sender: sender}
 }
 
 func (s *Business) CreateOrder(
@@ -89,7 +92,11 @@ func (s *Business) CreateOrder(
 	if err != nil {
 		return 0, fmt.Errorf("create order: %w", err)
 	}
-	log.Println(orderId)
+	// запись статуса в кафку
+	err = s.Sender.SendMessage(orderId, "new")
+	if err != nil {
+		return 0, err
+	}
 	return orderId, nil
 }
 
@@ -159,6 +166,8 @@ func (s *Business) OrderPayed(ctx context.Context, orderId orderModels.OrderId) 
 	if err != nil {
 		return fmt.Errorf("order payed: %w", err)
 	}
+	// запись статуса в кафку
+	s.Sender.SendMessage(orderId, "payed")
 	return nil
 }
 
@@ -181,5 +190,7 @@ func (s *Business) CancelOrder(ctx context.Context, orderId orderModels.OrderId)
 	if err != nil {
 		return fmt.Errorf("cancel order: %w", err)
 	}
+	// запись статуса в кафку
+	s.Sender.SendMessage(orderId, "canceled")
 	return nil
 }

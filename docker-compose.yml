@@ -41,6 +41,13 @@ services:
       - "6060:6060"
       - "8080:8080"
       - "50051:50051"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://checkout:8080"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
     depends_on:
       - postgres-checkout
     networks:
@@ -80,6 +87,13 @@ services:
     ports:
       - "8081:8081"
       - "50052:50052"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://loms:8081"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
     depends_on:
       - postgres-loms
       - kafka1
@@ -98,10 +112,12 @@ services:
       - kafka2
       - kafka3
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8082"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      test: ["CMD", "curl", "-f", "http://notifications:8082"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
     networks:
       - net
   # kafka and tool for kafka:
@@ -119,6 +135,7 @@ services:
       interval: 10s
       timeout: 10s
       retries: 3
+    restart: unless-stopped
     ports:
       - "2181:2181"
       - "2888:2888"
@@ -129,6 +146,10 @@ services:
     image: confluentinc/cp-kafka:latest
     healthcheck:
       test: ps augwwx | egrep [S]upportedKafka
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
     depends_on:
       - zookeeper
     ports:
@@ -147,6 +168,10 @@ services:
     image: confluentinc/cp-kafka:latest
     healthcheck:
       test: ps augwwx | egrep [S]upportedKafka
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
     depends_on:
       - zookeeper
     ports:
@@ -165,6 +190,10 @@ services:
     image: confluentinc/cp-kafka:latest
     healthcheck:
       test: ps augwwx | egrep [S]upportedKafka
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
     depends_on:
       - zookeeper
     ports:

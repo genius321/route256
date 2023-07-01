@@ -51,7 +51,7 @@ func (consumer *ConsumerGroup) ConsumeClaim(session sarama.ConsumerGroupSession,
 			sm := statusMessage{}
 			err := json.Unmarshal(message.Value, &sm)
 			if err != nil {
-				fmt.Println("Consumer group error", err)
+				log.Println("Consumer group error", err)
 			}
 
 			response := fmt.Sprintf("orderId:%d status:%s\n", sm.OrderId, sm.StatusName)

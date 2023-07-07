@@ -7,7 +7,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"route256/checkout/internal/config"
 	"route256/checkout/internal/pkg/checkout"
 	"route256/checkout/internal/pkg/loms"
@@ -15,6 +14,7 @@ import (
 	"route256/checkout/internal/pkg/ratelimit"
 	"route256/checkout/internal/pkg/workerpool"
 	"route256/checkout/internal/repository/schema"
+	"route256/libs/logger"
 	"sync/atomic"
 	"time"
 
@@ -75,14 +75,14 @@ const (
 )
 
 func (s *Service) AddToCart(ctx context.Context, req *checkout.AddToCartRequest) (*emptypb.Empty, error) {
-	log.Printf("%+v", req)
+	logger.Infof("%+v", req)
 	err := req.ValidateAll()
 	if err != nil {
 		return nil, err
 	}
 	stocksResp, _ := s.LomsClient.Stocks(ctx, &loms.StocksRequest{Sku: req.Sku})
 	stocks := stocksResp.Stocks
-	log.Printf("stocks: %v", stocks)
+	logger.Infof("stocks: %v", stocks)
 	counter := int64(req.Count)
 	for _, stock := range stocks {
 		counter -= int64(stock.Count)
@@ -94,7 +94,7 @@ func (s *Service) AddToCart(ctx context.Context, req *checkout.AddToCartRequest)
 }
 
 func (s *Service) DeleteFromCart(ctx context.Context, req *checkout.DeleteFromCartRequest) (*emptypb.Empty, error) {
-	log.Printf("%+v", req)
+	logger.Infof("%+v", req)
 	err := req.ValidateAll()
 	if err != nil {
 		return nil, err
@@ -110,7 +110,7 @@ func (s *Service) DeleteFromCart(ctx context.Context, req *checkout.DeleteFromCa
 }
 
 func (s *Service) ListCart(ctx context.Context, req *checkout.ListCartRequest) (*checkout.ListCartResponse, error) {
-	log.Printf("%+v", req)
+	logger.Infof("%+v", req)
 	err := req.ValidateAll()
 	if err != nil {
 		return nil, err
@@ -131,7 +131,7 @@ func (s *Service) ListCart(ctx context.Context, req *checkout.ListCartRequest) (
 	for i, v := range items {
 		// Проверка действителен ли контекст
 		if err := gCtx.Err(); err != nil {
-			log.Println(time.Since(timeStart))
+			logger.Infoln(time.Since(timeStart))
 			return nil, err
 		}
 		eitherCh := wp.Exec(gCtx,
@@ -145,7 +145,7 @@ func (s *Service) ListCart(ctx context.Context, req *checkout.ListCartRequest) (
 		i, v := i, v
 		g.Go(func() error {
 			either := <-eitherCh
-			log.Println(either.Value, either.Err)
+			logger.Infoln(either.Value, either.Err)
 			if either.Err != nil {
 				return either.Err
 			}
@@ -161,15 +161,15 @@ func (s *Service) ListCart(ctx context.Context, req *checkout.ListCartRequest) (
 		})
 	}
 	if err := g.Wait(); err != nil {
-		log.Println(time.Since(timeStart))
+		logger.Infoln(time.Since(timeStart))
 		return nil, err
 	}
-	log.Println(time.Since(timeStart))
+	logger.Infoln(time.Since(timeStart))
 	return &checkout.ListCartResponse{Items: respItems, TotalPrice: uint32(totalPrice.Load())}, nil
 }
 
 func (s *Service) Purchase(ctx context.Context, req *checkout.PurchaseRequest) (*checkout.PurchaseResponse, error) {
-	log.Printf("%+v", req)
+	logger.Infof("%+v", req)
 	err := req.ValidateAll()
 	if err != nil {
 		return nil, err

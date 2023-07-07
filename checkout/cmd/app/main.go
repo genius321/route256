@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -15,6 +15,7 @@ import (
 	"route256/checkout/internal/repository/postgres"
 	"route256/checkout/internal/repository/postgres/tx"
 	"route256/checkout/internal/service"
+	"route256/libs/logger"
 	"time"
 
 	_ "net/http/pprof"
@@ -27,7 +28,15 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
+var (
+	environment = flag.String("environment", "DEVELOPMENT", "environment: [DEVELOPMENT, PRODUCTION]")
+)
+
 func main() {
+	flag.Parse()
+	// Init logger for environment
+	logger.SetLoggerByEnvironment(*environment)
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -41,14 +50,14 @@ func main() {
 
 	// up debugcharts server
 	go func() {
-		log.Println("server Pprof on :6060")
-		log.Println(http.ListenAndServe(":6060", nil))
+		logger.Info("server Pprof on :6060")
+		logger.Info(http.ListenAndServe(":6060", nil))
 	}()
 
 	connToLoms, err := grpc.Dial(config.AddressLoms,
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("failed to connect to server: %v", err)
+		logger.Fatalf("failed to connect to server: %v", err)
 	}
 	defer connToLoms.Close()
 
@@ -57,7 +66,7 @@ func main() {
 	connToProduct, err := grpc.Dial(config.AddressProduct,
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("failed to connect to server: %v", err)
+		logger.Fatalf("failed to connect to server: %v", err)
 	}
 	defer connToProduct.Close()
 
@@ -66,7 +75,7 @@ func main() {
 	// connection to db
 	pool, err := pgxpool.Connect(ctx, os.Getenv("CHECKOUT_DATABASE_URL"))
 	if err != nil {
-		log.Fatalf("connect to db: %v", err)
+		logger.Fatalf("connect to db: %v", err)
 	}
 	defer pool.Close()
 
@@ -77,7 +86,7 @@ func main() {
 	// checkout server setup
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", config.GrpcPort))
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		logger.Fatalf("failed to listen: %v", err)
 	}
 
 	s := grpc.NewServer()
@@ -90,11 +99,11 @@ func main() {
 		ratelimiter,
 	))
 
-	log.Printf("server listening at %v", lis.Addr())
+	logger.Info("server listening at %v", lis.Addr())
 
 	go func() {
 		if err = s.Serve(lis); err != nil {
-			log.Fatalf("failed to serve: %v", err)
+			logger.Fatalf("failed to serve: %v", err)
 		}
 	}()
 
@@ -107,13 +116,13 @@ func main() {
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
-		log.Fatalln("Failed to dial server:", err)
+		logger.Fatalf("Failed to dial server: %v", err)
 	}
 
 	mux := runtime.NewServeMux()
 	err = checkout.RegisterCheckoutHandler(ctx, mux, conn)
 	if err != nil {
-		log.Fatalln("Failed to register gateway:", err)
+		logger.Fatalf("Failed to register gateway: %v", err)
 	}
 
 	gwServer := &http.Server{
@@ -121,6 +130,6 @@ func main() {
 		Handler: mux,
 	}
 
-	log.Printf("Serving gRPC-Gateway on %s\n", gwServer.Addr)
-	log.Fatalln(gwServer.ListenAndServe())
+	logger.Info("Serving gRPC-Gateway on %s\n", gwServer.Addr)
+	logger.Fatal(gwServer.ListenAndServe())
 }

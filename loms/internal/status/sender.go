@@ -3,6 +3,7 @@ package status
 import (
 	"encoding/json"
 	"fmt"
+	"route256/libs/logger"
 	"route256/loms/internal/kafka"
 	orderModels "route256/loms/internal/models/order"
 
@@ -30,18 +31,18 @@ func (s *KafkaSender) SendMessage(orderId orderModels.OrderId, stataus orderMode
 	message := statusMessage{OrderId: int64(orderId), StatusName: string(stataus)}
 	kafkaMsg, err := s.buildMessage(message)
 	if err != nil {
-		fmt.Println("Send message marshal error", err)
+		logger.Infoln("Send message marshal error", err)
 		return err
 	}
 
 	partition, offset, err := s.producer.SendSyncMessage(kafkaMsg)
 
 	if err != nil {
-		fmt.Println("Send message connector error", err)
+		logger.Infoln("Send message connector error", err)
 		return err
 	}
 
-	fmt.Println("Partition: ", partition, " Offset: ", offset, " AnswerID:", message.OrderId)
+	logger.Infoln("Partition: ", partition, " Offset: ", offset, " AnswerID:", message.OrderId)
 	return nil
 }
 
@@ -49,7 +50,7 @@ func (s *KafkaSender) buildMessage(message statusMessage) (*sarama.ProducerMessa
 	msg, err := json.Marshal(message)
 
 	if err != nil {
-		fmt.Println("Send message marshal error", err)
+		logger.Infoln("Send message marshal error", err)
 		return nil, err
 	}
 

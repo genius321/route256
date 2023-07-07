@@ -3,7 +3,7 @@ package kafka
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"route256/libs/logger"
 	"route256/notifications/internal/telegram"
 
 	"github.com/Shopify/sarama"
@@ -51,14 +51,14 @@ func (consumer *ConsumerGroup) ConsumeClaim(session sarama.ConsumerGroupSession,
 			sm := statusMessage{}
 			err := json.Unmarshal(message.Value, &sm)
 			if err != nil {
-				log.Println("Consumer group error", err)
+				logger.Error("Consumer group error", err)
 			}
 
 			response := fmt.Sprintf("orderId:%d status:%s\n", sm.OrderId, sm.StatusName)
 			msg := tgbotapi.NewMessage(457312730, response)
 			consumer.bot.SendMessage(&msg)
 
-			log.Printf("Message claimed: value = %v, timestamp = %v, topic = %s",
+			logger.Infof("Message claimed: value = %v, timestamp = %v, topic = %s",
 				sm,
 				message.Timestamp,
 				message.Topic,

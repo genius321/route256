@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"route256/libs/logger"
 	orderModels "route256/loms/internal/models/order"
 	stockModels "route256/loms/internal/models/stock"
 )
@@ -60,7 +60,7 @@ func (s *Business) CreateOrder(
 			if err != nil {
 				return err
 			}
-			log.Println(warehouseIdReserveCnt)
+			logger.Infoln(warehouseIdReserveCnt)
 			for warehouseID, reserveCnt := range warehouseIdReserveCnt {
 				_, err = s.Repository.TakeSkuStock(ctxTx, stockModels.StockWithSku{
 					Sku: stockModels.Sku(v.Sku),

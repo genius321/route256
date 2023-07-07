@@ -38,3 +38,12 @@ install-smartimports: bindir
 	test -f ${SMARTIMPORTS} || \
 		(GOBIN=${BINDIR} go install github.com/pav5000/smartimports/cmd/smartimports@latest && \
 		mv ${BINDIR}/smartimports ${SMARTIMPORTS})
+
+dev:
+	go run ./cmd/notifications/main.go --environment=DEVELOPMENT
+
+log-dir:
+	mkdir -p ${CURDIR}/internal/logs/data
+
+prod: log-dir
+	go run ./cmd/app/main.go --environment=PRODUCTION 2>&1 >> internal/logs/data/log.txt

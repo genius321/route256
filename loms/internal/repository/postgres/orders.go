@@ -3,7 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
-	"log"
+	"route256/libs/logger"
 	orderModels "route256/loms/internal/models/order"
 
 	sq "github.com/Masterminds/squirrel"
@@ -28,7 +28,7 @@ func (r *Repository) CreateOrder(
 
 	var orderId orderModels.OrderId
 	err = db.QueryRow(ctx, rawSQL, args...).Scan(&orderId)
-	log.Println("NEW ORDER: ", orderId)
+	logger.Infoln("NEW ORDER: ", orderId)
 	if err != nil {
 		return 0, fmt.Errorf("exec insert order in orders: %w", err)
 	}

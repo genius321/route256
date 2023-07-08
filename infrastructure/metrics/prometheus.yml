@@ -14,8 +14,5 @@ scrape_configs:
   - job_name: "app"
     static_configs:
       - targets:
-          - "host.docker.internal:8002"
-          - "host.docker.internal:8003" # Gauge metrics
-          - "host.docker.internal:8004" # Counter metrics
-          - "host.docker.internal:8005" # Summary metrics
-          - "host.docker.internal:8006" # Histogram metrics
+          - "host.docker.internal:8080" # CHECKOUT
+          - "host.docker.internal:8081" # LOMS

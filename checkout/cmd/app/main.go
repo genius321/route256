@@ -16,6 +16,7 @@ import (
 	"route256/checkout/internal/repository/postgres/tx"
 	"route256/checkout/internal/service"
 	"route256/libs/logger"
+	"route256/libs/metrics"
 	"route256/libs/tracer"
 	"time"
 
@@ -24,6 +25,7 @@ import (
 	"github.com/aitsvet/debugcharts"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
@@ -61,6 +63,7 @@ func main() {
 	}()
 
 	connToLoms, err := grpc.Dial(config.AddressLoms,
+		grpc.WithUnaryInterceptor(metrics.MiddlewareClientGRPC),
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		logger.Fatalf("failed to connect to server: %v", err)
@@ -70,6 +73,7 @@ func main() {
 	lomsClient := loms.NewLomsClient(connToLoms)
 
 	connToProduct, err := grpc.Dial(config.AddressProduct,
+		grpc.WithUnaryInterceptor(metrics.MiddlewareClientGRPC),
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		logger.Fatalf("failed to connect to server: %v", err)
@@ -95,7 +99,10 @@ func main() {
 		logger.Fatalf("failed to listen: %v", err)
 	}
 
-	s := grpc.NewServer()
+	s := grpc.NewServer(grpc.ChainUnaryInterceptor(
+		tracer.MiddlewareGRPC,
+		metrics.MiddlewareServerGRPC,
+	))
 	reflection.Register(s)
 	checkout.RegisterCheckoutServer(s, service.NewCheckoutServer(
 		lomsClient,
@@ -125,7 +132,22 @@ func main() {
 		logger.Fatalf("Failed to dial server: %v", err)
 	}
 
-	mux := runtime.NewServeMux()
+	mux := runtime.NewServeMux(
+		runtime.WithOutgoingHeaderMatcher(func(key string) (string, bool) {
+			switch key {
+			case "x-trace-id":
+				return key, true
+			}
+			return runtime.DefaultHeaderMatcher(key)
+		}),
+	)
+
+	if err := mux.HandlePath(http.MethodGet, "/metrics", func(w http.ResponseWriter, r *http.Request, _ map[string]string) {
+		promhttp.Handler().ServeHTTP(w, r)
+	}); err != nil {
+		logger.Fatalln("something wrong with metrics handler", err)
+	}
+
 	err = checkout.RegisterCheckoutHandler(ctx, mux, conn)
 	if err != nil {
 		logger.Fatalf("Failed to register gateway: %v", err)

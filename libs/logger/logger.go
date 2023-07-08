@@ -80,6 +80,10 @@ func Fatalf(template string, args ...interface{}) {
 	global.Fatalf(template, args...)
 }
 
+func Fatalln(args ...interface{}) {
+	global.Fatalln(args...)
+}
+
 func Panic(args ...interface{}) {
 	global.Panic()
 }

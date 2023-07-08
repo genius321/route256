@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"route256/libs/logger"
+	"route256/libs/metrics"
 	"route256/libs/tracer"
 	"route256/loms/internal/business"
 	"route256/loms/internal/kafka"
@@ -19,9 +20,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jackc/pgx/v4/pgxpool"
-	_ "github.com/pkg/errors"
-	_ "github.com/prometheus/client_golang/prometheus/promhttp"
-	_ "golang.org/x/sync/errgroup"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
@@ -49,41 +48,6 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	// g, gCtx := errgroup.WithContext(ctx)
-
-	// g.Go(func() error {
-	// 	mux := runtime.NewServeMux(
-	// 		runtime.WithOutgoingHeaderMatcher(func(key string) (string, bool) {
-	// 			switch key {
-	// 			case "x-trace-id":
-	// 				return key, true
-	// 			}
-	// 			return runtime.DefaultHeaderMatcher(key)
-	// 		}),
-	// 	)
-
-	// 	if err := mux.HandlePath(http.MethodGet, "/metrics", func(w http.ResponseWriter, r *http.Request, _ map[string]string) {
-	// 		promhttp.Handler().ServeHTTP(w, r)
-	// 	}); err != nil {
-	// 		logger.Fatal("something wrong with metrics handler", err)
-	// 	}
-
-	// 	if err := loms.RegisterLomsHandlerFromEndpoint(gCtx, mux, fmt.Sprintf("localhost:%d", grpcPort), []grpc.DialOption{
-	// 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	// 	}); err != nil {
-	// 		return errors.Wrap(err, "cannot register http server")
-	// 	}
-
-	// 	httpHost := "localhost:8002"
-	// 	logger.Info("HTTP server started on: ", httpHost)
-
-	// 	if err := http.ListenAndServe(httpHost, mux); err != nil {
-	// 		return err
-	// 	}
-
-	// 	return nil
-	// })
 
 	// kafkaProducer
 	var brokers = []string{
@@ -115,6 +79,7 @@ func main() {
 
 	s := grpc.NewServer(grpc.ChainUnaryInterceptor(
 		tracer.MiddlewareGRPC,
+		metrics.MiddlewareServerGRPC,
 	))
 	reflection.Register(s)
 	loms.RegisterLomsServer(s, service.NewService(business.NewBusiness(repo, provider, statusSender)))
@@ -139,10 +104,25 @@ func main() {
 		logger.Fatalf("Failed to dial server: %v", err)
 	}
 
-	mux := runtime.NewServeMux()
-	err = loms.RegisterLomsHandler(ctx, mux, conn)
+	mux := runtime.NewServeMux(
+		runtime.WithOutgoingHeaderMatcher(func(key string) (string, bool) {
+			switch key {
+			case "x-trace-id":
+				return key, true
+			}
+			return runtime.DefaultHeaderMatcher(key)
+		}),
+	)
+
+	if err := mux.HandlePath(http.MethodGet, "/metrics", func(w http.ResponseWriter, r *http.Request, _ map[string]string) {
+		promhttp.Handler().ServeHTTP(w, r)
+	}); err != nil {
+		logger.Fatalln("something wrong with metrics handler", err)
+	}
+
+	err = loms.RegisterLomsHandler(context.Background(), mux, conn)
 	if err != nil {
-		logger.Fatalf("Failed to register gateway: %v", err)
+		logger.Fatalln("Failed to register gateway:", err)
 	}
 
 	gwServer := &http.Server{
@@ -150,6 +130,6 @@ func main() {
 		Handler: mux,
 	}
 
-	logger.Info("Serving gRPC-Gateway on %s\n", gwServer.Addr)
-	logger.Fatal(gwServer.ListenAndServe())
+	logger.Infof("Serving gRPC-Gateway on %s\n", gwServer.Addr)
+	logger.Fatalln(gwServer.ListenAndServe())
 }

@@ -218,7 +218,7 @@ services:
       - ./infrastructure/metrics/alerts.yml:/etc/prometheus/alerts.yml
     extra_hosts:
       - host.docker.internal:host-gateway
-  grafana:
+  grafana: # для сбора метрик в ui http://host.docker.internal:9090
     image: grafana/grafana-oss
     ports:
       - 3000:3000
@@ -228,7 +228,7 @@ services:
       - prometheus
     networks:
       - net
-  # traicing
+  # tracing
   jaeger:
     image: jaegertracing/all-in-one
     ports:

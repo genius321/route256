@@ -2,22 +2,36 @@ package metrics
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
 )
 
-func MiddlewareGRPC(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+func MiddlewareServerGRPC(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 	start := time.Now()
 
 	h, err := handler(ctx, req)
 
-	status := "ok"
-	if err != nil {
-		status = "error"
-	}
+	code := status.Code(err)
 
-	HistogramResponseTime.WithLabelValues(status, info.FullMethod).Observe(time.Since(start).Seconds())
+	CounterRequests.Add(1)
+
+	CounterRequestsByGroup.WithLabelValues(info.FullMethod).Add(1)
+
+	HistogramResponseServerTime.WithLabelValues(strconv.Itoa(int(code)), info.FullMethod).Observe(time.Since(start).Seconds())
 
 	return h, err
+}
+
+func MiddlewareClientGRPC(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+	start := time.Now()
+
+	err := invoker(ctx, method, req, reply, cc, opts...)
+	code := status.Code(err)
+
+	HistogramResponseClientTime.WithLabelValues(strconv.Itoa(int(code)), method).Observe(time.Since(start).Seconds())
+
+	return err
 }

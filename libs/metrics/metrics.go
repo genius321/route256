@@ -6,14 +6,38 @@ import (
 )
 
 var (
-	HistogramResponseTime = promauto.NewHistogramVec(prometheus.HistogramOpts{
+	CounterRequests = promauto.NewCounter(prometheus.CounterOpts{
 		Namespace: "ozon",
-		Subsystem: "grpc",
-		Name:      "histogram_response_time_seconds",
-		Buckets:   []float64{},
+		Name:      "counter_requests",
+	})
+
+	CounterRequestsByGroup = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "ozon",
+		Name:      "counter_requests_by_method",
 	},
 		[]string{
-			"status",
+			"method",
+		},
+	)
+
+	HistogramResponseServerTime = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: "ozon",
+		Name:      "histogram_response_server_time_seconds",
+		Buckets:   prometheus.DefBuckets,
+	},
+		[]string{
+			"code_response",
+			"method",
+		},
+	)
+
+	HistogramResponseClientTime = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: "ozon",
+		Name:      "histogram_response_client_time_seconds",
+		Buckets:   prometheus.DefBuckets,
+	},
+		[]string{
+			"code_response",
 			"method",
 		},
 	)

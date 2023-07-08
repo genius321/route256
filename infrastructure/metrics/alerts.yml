@@ -1,0 +1,11 @@
+groups:
+  - name: alerts
+    rules:
+      - alert: TargetIsDown
+        expr: up == 0
+        for: 30s
+        labels:
+          severity: medium
+        annotations:
+          summary: "Server is down"
+          description: "Server has been down for more than 30 seconds."

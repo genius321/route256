@@ -35,10 +35,8 @@ func SetLoggerByEnvironment(environment string) {
 func New(level zap.AtomicLevel, sink io.Writer, opts ...zap.Option) *zap.SugaredLogger {
 	core := zapcore.NewCore(
 		zapcore.NewJSONEncoder(zapcore.EncoderConfig{
-			TimeKey:  "ts",
-			LevelKey: "level",
-			// NameKey:        "logger",
-			// CallerKey:      "caller",
+			TimeKey:        "ts",
+			LevelKey:       "level",
 			MessageKey:     "message",
 			StacktraceKey:  "stacktrace",
 			EncodeLevel:    zapcore.LowercaseLevelEncoder,

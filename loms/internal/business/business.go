@@ -7,6 +7,8 @@ import (
 	"route256/libs/logger"
 	orderModels "route256/loms/internal/models/order"
 	stockModels "route256/loms/internal/models/stock"
+
+	"github.com/opentracing/opentracing-go"
 )
 
 type TransactionManager interface {
@@ -48,6 +50,12 @@ func (s *Business) CreateOrder(
 	user orderModels.User,
 	items orderModels.Items,
 ) (orderModels.OrderId, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "business/loms/CreateOrder")
+	defer span.Finish()
+
+	span.SetTag("user_id", user)
+	span.LogKV("items", items)
+
 	var orderId orderModels.OrderId
 	var err error
 	err = s.RunSerializable(ctx, func(ctxTx context.Context) error {

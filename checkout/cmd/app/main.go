@@ -16,6 +16,7 @@ import (
 	"route256/checkout/internal/repository/postgres/tx"
 	"route256/checkout/internal/service"
 	"route256/libs/logger"
+	"route256/libs/tracer"
 	"time"
 
 	_ "net/http/pprof"
@@ -36,6 +37,11 @@ func main() {
 	flag.Parse()
 	// Init logger for environment
 	logger.SetLoggerByEnvironment(*environment)
+
+	// Init tracer
+	if err := tracer.InitGlobal("CHECKOUT"); err != nil {
+		logger.Fatal(err)
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

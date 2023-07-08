@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"route256/libs/logger"
+	"route256/libs/tracer"
 	"route256/loms/internal/business"
 	"route256/loms/internal/kafka"
 	"route256/loms/internal/pkg/loms"
@@ -18,6 +19,9 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jackc/pgx/v4/pgxpool"
+	_ "github.com/pkg/errors"
+	_ "github.com/prometheus/client_golang/prometheus/promhttp"
+	_ "golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
@@ -37,6 +41,50 @@ func main() {
 
 	// Init logger for environment
 	logger.SetLoggerByEnvironment(*environment)
+
+	// Init tracer
+	if err := tracer.InitGlobal("LOMS"); err != nil {
+		logger.Fatal(err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// g, gCtx := errgroup.WithContext(ctx)
+
+	// g.Go(func() error {
+	// 	mux := runtime.NewServeMux(
+	// 		runtime.WithOutgoingHeaderMatcher(func(key string) (string, bool) {
+	// 			switch key {
+	// 			case "x-trace-id":
+	// 				return key, true
+	// 			}
+	// 			return runtime.DefaultHeaderMatcher(key)
+	// 		}),
+	// 	)
+
+	// 	if err := mux.HandlePath(http.MethodGet, "/metrics", func(w http.ResponseWriter, r *http.Request, _ map[string]string) {
+	// 		promhttp.Handler().ServeHTTP(w, r)
+	// 	}); err != nil {
+	// 		logger.Fatal("something wrong with metrics handler", err)
+	// 	}
+
+	// 	if err := loms.RegisterLomsHandlerFromEndpoint(gCtx, mux, fmt.Sprintf("localhost:%d", grpcPort), []grpc.DialOption{
+	// 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	// 	}); err != nil {
+	// 		return errors.Wrap(err, "cannot register http server")
+	// 	}
+
+	// 	httpHost := "localhost:8002"
+	// 	logger.Info("HTTP server started on: ", httpHost)
+
+	// 	if err := http.ListenAndServe(httpHost, mux); err != nil {
+	// 		return err
+	// 	}
+
+	// 	return nil
+	// })
+
 	// kafkaProducer
 	var brokers = []string{
 		"kafka1:29091",
@@ -50,7 +98,7 @@ func main() {
 	statusSender := status.NewKafkaSender(kafkaProducer, "statuses")
 
 	// connection to db
-	pool, err := pgxpool.Connect(context.Background(), os.Getenv("LOMS_DATABASE_URL"))
+	pool, err := pgxpool.Connect(ctx, os.Getenv("LOMS_DATABASE_URL"))
 	if err != nil {
 		logger.Fatal("connect to db: %w", err)
 	}
@@ -65,7 +113,9 @@ func main() {
 		logger.Fatalf("failed to listen: %v", err)
 	}
 
-	s := grpc.NewServer()
+	s := grpc.NewServer(grpc.ChainUnaryInterceptor(
+		tracer.MiddlewareGRPC,
+	))
 	reflection.Register(s)
 	loms.RegisterLomsServer(s, service.NewService(business.NewBusiness(repo, provider, statusSender)))
 
@@ -80,7 +130,7 @@ func main() {
 	// Create a client connection to the gRPC server we just started
 	// This is where the gRPC-Gateway proxies the requests
 	conn, err := grpc.DialContext(
-		context.Background(),
+		ctx,
 		lis.Addr().String(),
 		grpc.WithBlock(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -90,7 +140,7 @@ func main() {
 	}
 
 	mux := runtime.NewServeMux()
-	err = loms.RegisterLomsHandler(context.Background(), mux, conn)
+	err = loms.RegisterLomsHandler(ctx, mux, conn)
 	if err != nil {
 		logger.Fatalf("Failed to register gateway: %v", err)
 	}

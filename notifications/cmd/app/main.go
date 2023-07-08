@@ -6,6 +6,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"route256/libs/logger"
+	"route256/libs/tracer"
 	"route256/notifications/internal/service"
 	"route256/notifications/internal/telegram"
 )
@@ -18,6 +19,11 @@ func main() {
 	flag.Parse()
 	// Init logger for environment
 	logger.SetLoggerByEnvironment(*environment)
+
+	// Init tracer
+	if err := tracer.InitGlobal("NOTIFICATIONS"); err != nil {
+		logger.Fatal(err)
+	}
 
 	// создаёт бота
 	bot, err := tgbotapi.NewBotAPI("6376011717:AAFrInwAk9DH2NjwbRXuBCslp9D6QVHsPew")

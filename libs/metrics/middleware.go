@@ -2,7 +2,6 @@ package metrics
 
 import (
 	"context"
-	"strconv"
 	"time"
 
 	"google.golang.org/grpc"
@@ -14,7 +13,7 @@ func MiddlewareServerGRPC(ctx context.Context, req interface{}, info *grpc.Unary
 
 	h, err := handler(ctx, req)
 
-	code := status.Code(err)
+	code := status.Code(err).String()
 
 	status := "ok"
 	if err != nil {
@@ -25,7 +24,7 @@ func MiddlewareServerGRPC(ctx context.Context, req interface{}, info *grpc.Unary
 
 	CounterRequestsByGroup.WithLabelValues(info.FullMethod).Add(1)
 
-	HistogramResponseServerTime.WithLabelValues(strconv.Itoa(int(code)), status, info.FullMethod).Observe(time.Since(start).Seconds())
+	HistogramResponseServerTime.WithLabelValues(code, status, info.FullMethod).Observe(time.Since(start).Seconds())
 
 	return h, err
 }
@@ -34,14 +33,14 @@ func MiddlewareClientGRPC(ctx context.Context, method string, req, reply interfa
 	start := time.Now()
 
 	err := invoker(ctx, method, req, reply, cc, opts...)
-	code := status.Code(err)
+	code := status.Code(err).String()
 
 	status := "ok"
 	if err != nil {
 		status = "error"
 	}
 
-	HistogramResponseClientTime.WithLabelValues(strconv.Itoa(int(code)), status, method).Observe(time.Since(start).Seconds())
+	HistogramResponseClientTime.WithLabelValues(code, status, method).Observe(time.Since(start).Seconds())
 
 	return err
 }

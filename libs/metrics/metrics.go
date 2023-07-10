@@ -27,6 +27,7 @@ var (
 	},
 		[]string{
 			"code_response",
+			"status",
 			"method",
 		},
 	)
@@ -38,6 +39,7 @@ var (
 	},
 		[]string{
 			"code_response",
+			"status",
 			"method",
 		},
 	)

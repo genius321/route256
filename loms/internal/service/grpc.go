@@ -9,6 +9,7 @@ import (
 	stockModels "route256/loms/internal/models/stock"
 	"route256/loms/internal/pkg/loms"
 
+	"github.com/opentracing/opentracing-go"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -22,6 +23,8 @@ func NewService(service *business.Business) *Service {
 }
 
 func (g *Service) CreateOrder(ctx context.Context, req *loms.CreateOrderRequest) (*loms.CreateOrderResponse, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/service/CreateOrder")
+	defer span.Finish()
 	logger.Infof("%+v", req)
 	err := req.ValidateAll()
 	if err != nil {
@@ -44,6 +47,8 @@ func (g *Service) CreateOrder(ctx context.Context, req *loms.CreateOrderRequest)
 }
 
 func (g *Service) Stocks(ctx context.Context, req *loms.StocksRequest) (*loms.StocksResponse, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/service/Stocks")
+	defer span.Finish()
 	logger.Infof("%+v", req)
 	err := req.ValidateAll()
 	if err != nil {
@@ -69,6 +74,8 @@ func (g *Service) Stocks(ctx context.Context, req *loms.StocksRequest) (*loms.St
 }
 
 func (g *Service) ListOrder(ctx context.Context, req *loms.ListOrderRequest) (*loms.ListOrderResponse, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/service/ListOrder")
+	defer span.Finish()
 	logger.Infof("%+v", req)
 	err := req.ValidateAll()
 	if err != nil {
@@ -95,6 +102,8 @@ func (g *Service) ListOrder(ctx context.Context, req *loms.ListOrderRequest) (*l
 }
 
 func (g *Service) OrderPayed(ctx context.Context, req *loms.OrderPayedRequest) (*emptypb.Empty, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/service/OrderPayed")
+	defer span.Finish()
 	logger.Infof("%+v", req)
 	err := req.ValidateAll()
 	if err != nil {
@@ -109,6 +118,8 @@ func (g *Service) OrderPayed(ctx context.Context, req *loms.OrderPayedRequest) (
 }
 
 func (g *Service) CancelOrder(ctx context.Context, req *loms.CancelOrderRequest) (*emptypb.Empty, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/service/CancelOrder")
+	defer span.Finish()
 	logger.Infof("%+v", req)
 	err := req.ValidateAll()
 	if err != nil {

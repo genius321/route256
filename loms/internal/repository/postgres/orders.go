@@ -8,6 +8,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/pgxscan"
+	"github.com/opentracing/opentracing-go"
 )
 
 func (r *Repository) CreateOrder(
@@ -15,6 +16,8 @@ func (r *Repository) CreateOrder(
 	user orderModels.User,
 	items orderModels.Items,
 ) (orderModels.OrderId, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/repository/postgres/CreateOrder")
+	defer span.Finish()
 	db := r.provider.GetDB(ctx)
 
 	query := psql.Insert(tableNameOrders).Columns("user_id").
@@ -53,6 +56,8 @@ func (r *Repository) ListOrder(
 	ctx context.Context,
 	orderId orderModels.OrderId,
 ) (orderModels.Status, orderModels.User, orderModels.Items, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/repository/postgres/ListOrder")
+	defer span.Finish()
 	db := r.provider.GetDB(ctx)
 	query := psql.Select("status_name", "user_id").
 		From(tableNameOrders).
@@ -97,6 +102,8 @@ func (r *Repository) ListOrder(
 }
 
 func (r *Repository) OrderPayed(ctx context.Context, orderId orderModels.OrderId) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/repository/postgres/OrderPayed")
+	defer span.Finish()
 	db := r.provider.GetDB(ctx)
 	query := psql.Update(tableNameOrders).
 		Set("status_name", "payed").
@@ -113,6 +120,8 @@ func (r *Repository) OrderPayed(ctx context.Context, orderId orderModels.OrderId
 }
 
 func (r *Repository) CancelOrder(ctx context.Context, orderId orderModels.OrderId) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/repository/postgres/CancelOrder")
+	defer span.Finish()
 	db := r.provider.GetDB(ctx)
 	query := psql.Update(tableNameOrders).
 		Set("status_name", "cancelled").

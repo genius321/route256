@@ -9,9 +9,12 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/pgxscan"
+	"github.com/opentracing/opentracing-go"
 )
 
 func (r *Repository) Stocks(ctx context.Context, sku stockModels.Sku) (stockModels.Stocks, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/repository/postgres/Stocks")
+	defer span.Finish()
 	db := r.provider.GetDB(ctx)
 
 	query := psql.Select("warehouse_id", "amount").
@@ -41,8 +44,9 @@ func (r *Repository) Stocks(ctx context.Context, sku stockModels.Sku) (stockMode
 	return stocks, nil
 }
 
-func (r *Repository) AddSkuStockReserve(
-	ctx context.Context, stockWithSku stockModels.StockWithSku, orderId orderModels.OrderId) error {
+func (r *Repository) AddSkuStockReserve(ctx context.Context, stockWithSku stockModels.StockWithSku, orderId orderModels.OrderId) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/repository/postgres/AddSkuStockReserve")
+	defer span.Finish()
 	db := r.provider.GetDB(ctx)
 	query := `
 INSERT INTO sku_stocks_reservation("sku", "warehouse_id", "order_id", "amount") VALUES 
@@ -57,6 +61,8 @@ INSERT INTO sku_stocks_reservation("sku", "warehouse_id", "order_id", "amount") 
 }
 
 func (r *Repository) DeleteStocksReserveByOrderId(ctx context.Context, orderId orderModels.OrderId) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/repository/postgres/DeleteStocksReserveByOrderId")
+	defer span.Finish()
 	db := r.provider.GetDB(ctx)
 	query := psql.Delete(tableNameSkuStocksReservation).
 		Where(sq.Eq{"order_id": orderId})
@@ -75,6 +81,8 @@ func (r *Repository) TakeStocksReserveByOrderId(
 	ctx context.Context,
 	orderId orderModels.OrderId,
 ) (stockModels.StocksWithSku, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/repository/postgres/TakeStocksReserveByOrderId")
+	defer span.Finish()
 	db := r.provider.GetDB(ctx)
 	query := psql.Select("sku", "warehouse_id", "amount").
 		From(tableNameSkuStocksReservation).
@@ -101,6 +109,8 @@ func (r *Repository) TakeStocksReserveByOrderId(
 }
 
 func (r *Repository) AddSkuStock(ctx context.Context, stockWithSku stockModels.StockWithSku) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/repository/postgres/AddSkuStock")
+	defer span.Finish()
 	db := r.provider.GetDB(ctx)
 	query := `
 INSERT INTO sku_stocks("sku", "warehouse_id", "amount") VALUES 
@@ -117,8 +127,9 @@ ON CONFLICT ("sku", "warehouse_id") DO UPDATE
 	return nil
 }
 
-func (r *Repository) TakeSkuStock(
-	ctx context.Context, stockWithSku stockModels.StockWithSku) (stockModels.Count, error) {
+func (r *Repository) TakeSkuStock(ctx context.Context, stockWithSku stockModels.StockWithSku) (stockModels.Count, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/repository/postgres/TakeSkuStock")
+	defer span.Finish()
 	db := r.provider.GetDB(ctx)
 	query := `
 INSERT INTO sku_stocks("sku", "warehouse_id", "amount") VALUES 

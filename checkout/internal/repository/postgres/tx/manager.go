@@ -7,6 +7,7 @@ import (
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/opentracing/opentracing-go"
 )
 
 var txKey = struct{}{}
@@ -30,6 +31,8 @@ type Querier interface {
 }
 
 func (m *Manager) RunRepeatableRead(ctx context.Context, fn func(ctxTx context.Context) error) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/repository/postgres/tx/RunRepeatableRead")
+	defer span.Finish()
 	tx, err := m.pool.BeginTx(ctx, pgx.TxOptions{
 		IsoLevel: pgx.RepeatableRead,
 	})
@@ -51,6 +54,8 @@ func (m *Manager) RunRepeatableRead(ctx context.Context, fn func(ctxTx context.C
 }
 
 func (m *Manager) Serializable(ctx context.Context, fn func(ctxTx context.Context) error) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/repository/postgres/tx/Serializable")
+	defer span.Finish()
 	tx, err := m.pool.BeginTx(ctx, pgx.TxOptions{
 		IsoLevel: pgx.Serializable,
 	})

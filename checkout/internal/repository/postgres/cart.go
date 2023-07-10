@@ -8,10 +8,13 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/pgxscan"
+	"github.com/opentracing/opentracing-go"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 func (r *Repository) AddToCart(ctx context.Context, req *checkout.AddToCartRequest) (*emptypb.Empty, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/repository/postgres/AddToCart")
+	defer span.Finish()
 	db := r.provider.GetDB(ctx)
 	query := `
 INSERT INTO carts("user_id", "sku", "amount") VALUES 
@@ -28,6 +31,8 @@ ON CONFLICT ("user_id", "sku") DO UPDATE
 }
 
 func (r *Repository) TakeCountSkuUserFromCart(ctx context.Context, userId int64, sku int64) (int64, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/repository/postgres/TakeCountSkuUserFromCart")
+	defer span.Finish()
 	db := r.provider.GetDB(ctx)
 	query := psql.Select("amount").
 		From("carts").
@@ -45,6 +50,8 @@ func (r *Repository) TakeCountSkuUserFromCart(ctx context.Context, userId int64,
 }
 
 func (r *Repository) SubFromCart(ctx context.Context, userId int64, sku int64, count int64) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/repository/postgres/SubFromCart")
+	defer span.Finish()
 	db := r.provider.GetDB(ctx)
 	query := `
 UPDATE carts
@@ -59,6 +66,8 @@ WHERE user_id = $1 and sku = $2;
 }
 
 func (r *Repository) DeleteFromCart(ctx context.Context, req *checkout.DeleteFromCartRequest) (*emptypb.Empty, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/repository/postgres/DeleteFromCart")
+	defer span.Finish()
 	db := r.provider.GetDB(ctx)
 	query := `
 DELETE FROM carts
@@ -72,6 +81,8 @@ WHERE user_id = $1 and sku = $2;
 }
 
 func (r *Repository) DeleteAllFromCart(ctx context.Context, req *checkout.DeleteFromCartRequest) (*emptypb.Empty, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/repository/postgres/DeleteAllFromCart")
+	defer span.Finish()
 	db := r.provider.GetDB(ctx)
 	query := `
 DELETE FROM carts
@@ -85,6 +96,8 @@ WHERE user_id = $1;
 }
 
 func (r *Repository) ListCart(ctx context.Context, req *checkout.ListCartRequest) ([]*schema.Item, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/repository/postgres/ListCart")
+	defer span.Finish()
 	db := r.provider.GetDB(ctx)
 	query := psql.Select("sku", "amount").
 		From("carts").

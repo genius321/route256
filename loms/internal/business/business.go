@@ -50,11 +50,8 @@ func (s *Business) CreateOrder(
 	user orderModels.User,
 	items orderModels.Items,
 ) (orderModels.OrderId, error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "business/loms/CreateOrder")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/business/CreateOrder")
 	defer span.Finish()
-
-	span.SetTag("user_id", user)
-	span.LogKV("items", items)
 
 	var orderId orderModels.OrderId
 	var err error
@@ -115,6 +112,8 @@ func (s *Business) ReserveStock(
 	sku stockModels.Sku,
 	count stockModels.Count,
 ) (mWarehouseIdReserveCnt, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/business/ReserveStock")
+	defer span.Finish()
 	var warehouseIdReserveCnt = make(mWarehouseIdReserveCnt, 1)
 
 	stocks, err := s.Repository.Stocks(ctx, sku)
@@ -152,6 +151,8 @@ func (s *Business) ReserveStock(
 }
 
 func (s *Business) Stocks(ctx context.Context, sku stockModels.Sku) (stockModels.Stocks, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/business/Stocks")
+	defer span.Finish()
 	return s.Repository.Stocks(ctx, sku)
 }
 
@@ -159,10 +160,14 @@ func (s *Business) ListOrder(
 	ctx context.Context,
 	orderId orderModels.OrderId,
 ) (orderModels.Status, orderModels.User, orderModels.Items, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/business/ListOrder")
+	defer span.Finish()
 	return s.Repository.ListOrder(ctx, orderId)
 }
 
 func (s *Business) OrderPayed(ctx context.Context, orderId orderModels.OrderId) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/business/OrderPayed")
+	defer span.Finish()
 	err := s.RunSerializable(ctx, func(ctxTx context.Context) error {
 		err := s.Repository.DeleteStocksReserveByOrderId(ctxTx, orderId)
 		if err != nil {
@@ -180,6 +185,8 @@ func (s *Business) OrderPayed(ctx context.Context, orderId orderModels.OrderId) 
 }
 
 func (s *Business) CancelOrder(ctx context.Context, orderId orderModels.OrderId) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/business/CancelOrder")
+	defer span.Finish()
 	err := s.RunSerializable(ctx, func(ctxTx context.Context) error {
 		reserve, err := s.Repository.TakeStocksReserveByOrderId(ctxTx, orderId)
 		if err != nil {

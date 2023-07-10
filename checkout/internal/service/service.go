@@ -18,6 +18,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/opentracing/opentracing-go"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -75,6 +76,8 @@ const (
 )
 
 func (s *Service) AddToCart(ctx context.Context, req *checkout.AddToCartRequest) (*emptypb.Empty, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/sevice/AddToCart")
+	defer span.Finish()
 	logger.Infof("%+v", req)
 	err := req.ValidateAll()
 	if err != nil {
@@ -94,6 +97,8 @@ func (s *Service) AddToCart(ctx context.Context, req *checkout.AddToCartRequest)
 }
 
 func (s *Service) DeleteFromCart(ctx context.Context, req *checkout.DeleteFromCartRequest) (*emptypb.Empty, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/sevice/DeleteFromCart")
+	defer span.Finish()
 	logger.Infof("%+v", req)
 	err := req.ValidateAll()
 	if err != nil {
@@ -110,6 +115,8 @@ func (s *Service) DeleteFromCart(ctx context.Context, req *checkout.DeleteFromCa
 }
 
 func (s *Service) ListCart(ctx context.Context, req *checkout.ListCartRequest) (*checkout.ListCartResponse, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/sevice/ListCart")
+	defer span.Finish()
 	logger.Infof("%+v", req)
 	err := req.ValidateAll()
 	if err != nil {
@@ -169,6 +176,8 @@ func (s *Service) ListCart(ctx context.Context, req *checkout.ListCartRequest) (
 }
 
 func (s *Service) Purchase(ctx context.Context, req *checkout.PurchaseRequest) (*checkout.PurchaseResponse, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/sevice/Purchase")
+	defer span.Finish()
 	logger.Infof("%+v", req)
 	err := req.ValidateAll()
 	if err != nil {

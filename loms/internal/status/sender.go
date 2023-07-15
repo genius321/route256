@@ -12,6 +12,7 @@ import (
 
 type statusMessage struct {
 	OrderId    int64
+	UserId     int64
 	StatusName string
 }
 
@@ -27,8 +28,8 @@ func NewKafkaSender(producer *kafka.Producer, topic string) *KafkaSender {
 	}
 }
 
-func (s *KafkaSender) SendMessage(orderId orderModels.OrderId, stataus orderModels.Status) error {
-	message := statusMessage{OrderId: int64(orderId), StatusName: string(stataus)}
+func (s *KafkaSender) SendMessage(orderId orderModels.OrderId, userId orderModels.User, stataus orderModels.Status) error {
+	message := statusMessage{OrderId: int64(orderId), UserId: int64(userId), StatusName: string(stataus)}
 	kafkaMsg, err := s.buildMessage(message)
 	if err != nil {
 		logger.Infoln("Send message marshal error", err)

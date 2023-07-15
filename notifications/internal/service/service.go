@@ -2,10 +2,13 @@ package service
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"route256/libs/logger"
 	"route256/notifications/internal/kafka"
+	"route256/notifications/internal/pkg/notifications"
 	"route256/notifications/internal/telegram"
 	"sync"
 	"syscall"
@@ -14,16 +17,64 @@ import (
 	"github.com/Shopify/sarama"
 )
 
+type TransactionManager interface {
+	RunRepeatableRead(ctx context.Context, fn func(ctxTx context.Context) error) error
+	RunSerializable(ctx context.Context, fn func(ctxTx context.Context) error) error
+}
+
+type Repository interface {
+	GetHistory(ctx context.Context, req *notifications.GetHistoryRequest) (*notifications.GetHistoryResponse, error)
+	SaveNotification(ctx context.Context, orderId, userId int64, status string) error
+}
+
+type Cache interface {
+	Add(key string, value any)
+	Get(key string) any
+}
+
 type Service struct {
+	notifications.UnimplementedNotificationsServer
+	TransactionManager
+	Repository
+	Cache
 	Brokers []string
 	Bot     *telegram.Bot
 }
 
-func NewService(brokers []string, bot *telegram.Bot) *Service {
-	return &Service{Brokers: brokers, Bot: bot}
+func NewNotificationService(provider TransactionManager, repo Repository, cache Cache, brokers []string, bot *telegram.Bot) *Service {
+	return &Service{
+		TransactionManager: provider,
+		Repository:         repo,
+		Cache:              cache,
+		Brokers:            brokers,
+		Bot:                bot,
+	}
 }
 
-func (s *Service) ConsumerGroupStatuses(brokers []string, bot *telegram.Bot) {
+func (s *Service) GetHistory(ctx context.Context, req *notifications.GetHistoryRequest) (*notifications.GetHistoryResponse, error) {
+	start := time.Now()
+	log.Printf("%+v\n", req)
+	err := req.ValidateAll()
+	if err != nil {
+		log.Println("ERROR", err)
+		return nil, err
+	}
+	key := fmt.Sprintf("%d--%s--%s", req.UserId, req.StartTime, req.EndTime)
+	data := s.Cache.Get(key)
+	result, ok := data.(*notifications.GetHistoryResponse)
+	if ok {
+		log.Println(time.Since(start))
+		return result, nil
+	}
+	result, err = s.Repository.GetHistory(ctx, req)
+	log.Println(time.Since(start))
+	if err == nil {
+		s.Cache.Add(key, result)
+	}
+	return result, err
+}
+
+func (s *Service) ConsumerGroupStatuses(brokers []string, bot *telegram.Bot, repo Repository) {
 	keepRunning := true
 	logger.Infoln("Starting a new Sarama consumer")
 
@@ -56,7 +107,7 @@ func (s *Service) ConsumerGroupStatuses(brokers []string, bot *telegram.Bot) {
 		logger.Panicf("Unrecognized consumer group partition assignor: %s", BalanceStrategy)
 	}
 
-	consumer := kafka.NewConsumerGroup(bot)
+	consumer := kafka.NewConsumerGroup(bot, repo)
 	group := "notifications"
 
 	ctx, cancel := context.WithCancel(context.Background())

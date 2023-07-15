@@ -22,6 +22,7 @@ type Repository interface {
 		orderModels.Status, orderModels.User, orderModels.Items, error)
 	OrderPayed(context.Context, orderModels.OrderId) error
 	CancelOrder(context.Context, orderModels.OrderId) error
+	GetUserIdByOrderId(context.Context, orderModels.OrderId) (orderModels.User, error)
 
 	Stocks(context.Context, stockModels.Sku) (stockModels.Stocks, error)
 	TakeSkuStock(context.Context, stockModels.StockWithSku) (stockModels.Count, error)
@@ -32,7 +33,7 @@ type Repository interface {
 }
 
 type Sender interface {
-	SendMessage(orderModels.OrderId, orderModels.Status) error
+	SendMessage(orderId orderModels.OrderId, userId orderModels.User, stataus orderModels.Status) error
 }
 
 type Business struct {
@@ -98,7 +99,7 @@ func (s *Business) CreateOrder(
 		return 0, fmt.Errorf("create order: %w", err)
 	}
 	// запись статуса в кафку
-	err = s.Sender.SendMessage(orderId, "new")
+	err = s.Sender.SendMessage(orderId, user, "new")
 	if err != nil {
 		return 0, err
 	}
@@ -179,8 +180,12 @@ func (s *Business) OrderPayed(ctx context.Context, orderId orderModels.OrderId) 
 	if err != nil {
 		return fmt.Errorf("order payed: %w", err)
 	}
+	userId, err := s.GetUserIdByOrderId(ctx, orderId)
+	if err != nil {
+		return fmt.Errorf("cancel order: %w", err)
+	}
 	// запись статуса в кафку
-	s.Sender.SendMessage(orderId, "payed")
+	s.Sender.SendMessage(orderId, userId, "payed")
 	return nil
 }
 
@@ -205,7 +210,11 @@ func (s *Business) CancelOrder(ctx context.Context, orderId orderModels.OrderId)
 	if err != nil {
 		return fmt.Errorf("cancel order: %w", err)
 	}
+	userId, err := s.GetUserIdByOrderId(ctx, orderId)
+	if err != nil {
+		return fmt.Errorf("cancel order: %w", err)
+	}
 	// запись статуса в кафку
-	s.Sender.SendMessage(orderId, "canceled")
+	s.Sender.SendMessage(orderId, userId, "canceled")
 	return nil
 }

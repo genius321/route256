@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package notifications;
+
+option go_package = "https://gitlab.ozon.dev/genius4666/homework/notifications/internal/pkg/notifications";
+
+import "validate/validate.proto";
+
+service Notifications {
+    rpc GetHistory(GetHistoryRequest) returns (GetHistoryResponse){}
+}
+
+message GetHistoryRequest {
+    int64 user_id = 1 [(validate.rules).int64 = {gte: 1,  lte: 9223372036854775807}];
+    string start_time = 2 [(validate.rules).string = {
+        len: 22,
+        pattern: "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\+\\d{2}$",
+    }];
+    string end_time = 3 [(validate.rules).string = {
+        len: 22,
+        pattern: "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\+\\d{2}$",
+    }];
+}
+
+message GetHistoryResponse {
+    repeated Entry entries = 1;
+}
+
+message Entry {
+    int64 order_id = 1;
+    string status = 2;
+    string created_at = 3;
+}

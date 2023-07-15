@@ -136,3 +136,16 @@ func (r *Repository) CancelOrder(ctx context.Context, orderId orderModels.OrderI
 	}
 	return nil
 }
+
+func (r *Repository) GetUserIdByOrderId(ctx context.Context, orderId orderModels.OrderId) (orderModels.User, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "internal/repository/postgres/GetUserIdByOrderId")
+	defer span.Finish()
+	db := r.provider.GetDB(ctx)
+	query := `SELECT user_id FROM orders WHERE order_id=$1 limit 1`
+	var result orderModels.User
+	err := db.QueryRow(ctx, query, orderId).Scan(&result)
+	if err != nil {
+		return 0, fmt.Errorf("exec select GetUserIdByOrderId: %w", err)
+	}
+	return result, nil
+}

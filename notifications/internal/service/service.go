@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"route256/libs/logger"
@@ -64,21 +63,21 @@ func NewNotificationService(provider TransactionManager, repo Repository, cache 
 // +03 - это время относительно UTC, в бд время хранится в timestamptz
 func (s *Service) GetHistory(ctx context.Context, req *notifications.GetHistoryRequest) (*notifications.GetHistoryResponse, error) {
 	start := time.Now()
-	log.Printf("%+v\n", req)
+	logger.Infof("%+v\n", req)
 	err := req.ValidateAll()
 	if err != nil {
-		log.Println("ERROR", err)
+		logger.Infoln("ERROR", err)
 		return nil, err
 	}
 	key := fmt.Sprintf("%d--%s--%s", req.UserId, req.StartTime, req.EndTime)
 	data := s.Cache.Get(key)
 	result, ok := data.(*notifications.GetHistoryResponse)
 	if ok {
-		log.Println(time.Since(start))
+		logger.Infoln(time.Since(start))
 		return result, nil
 	}
 	result, err = s.Repository.GetHistory(ctx, req)
-	log.Println(time.Since(start))
+	logger.Infoln(time.Since(start))
 	if err == nil {
 		s.Cache.Add(key, result)
 	}

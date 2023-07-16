@@ -25,7 +25,8 @@ func (r *Repository) GetHistory(ctx context.Context, req *notifications.GetHisto
 	FROM notifications
 	WHERE user_id=$1
 		AND created_at >= $2
-		AND created_at <= $3;
+		AND created_at <= $3
+	ORDER BY created_at desc;
 	`
 
 	var result []struct {

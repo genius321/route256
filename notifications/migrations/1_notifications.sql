@@ -7,9 +7,12 @@ CREATE TABLE IF NOT EXISTS notifications (
     created_at timestamptz default now(),
     PRIMARY KEY (order_id, status_name)
 );
+
+CREATE INDEX idx_user_id ON notifications(user_id);
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
+DROP INDEX idx_user_id;
 DROP TABLE IF EXISTS notifications;
 -- +goose StatementEnd

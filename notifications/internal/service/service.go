@@ -78,10 +78,11 @@ func (s *Service) GetHistory(ctx context.Context, req *notifications.GetHistoryR
 	}
 	result, err = s.Repository.GetHistory(ctx, req)
 	logger.Infoln(time.Since(start))
-	if err == nil {
-		s.Cache.Add(key, result)
+	if err != nil {
+		return nil, err
 	}
-	return result, err
+	s.Cache.Add(key, result)
+	return result, nil
 }
 
 func (s *Service) ConsumerGroupStatuses(brokers []string, bot *telegram.Bot, repo Repository) {

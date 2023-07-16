@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	"net"
 	"os"
 
@@ -61,7 +60,7 @@ func main() {
 	// connection to db
 	pool, err := pgxpool.Connect(ctx, os.Getenv("NOTIFICATIONS_DATABASE_URL"))
 	if err != nil {
-		log.Fatal("connect to db: %w", err)
+		logger.Fatalf("connect to db: %w", err)
 	}
 	defer pool.Close()
 
@@ -72,7 +71,7 @@ func main() {
 	// создаёт сервис нотификаций
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		logger.Fatalf("failed to listen: %v", err)
 	}
 
 	s := grpc.NewServer()
@@ -80,11 +79,11 @@ func main() {
 	service := service.NewNotificationService(provider, repo, cache, brokers, telegramBot)
 	notifications.RegisterNotificationsServer(s, service)
 
-	log.Printf("server listening at %v", lis.Addr())
+	logger.Infof("server listening at %v", lis.Addr())
 
 	go func() {
 		if err = s.Serve(lis); err != nil {
-			log.Fatalf("failed to serve: %v", err)
+			logger.Fatalf("failed to serve: %v", err)
 		}
 	}()
 

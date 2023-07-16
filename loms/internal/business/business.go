@@ -96,12 +96,12 @@ func (s *Business) CreateOrder(
 		return nil
 	})
 	if err != nil {
-		return 0, fmt.Errorf("create order: %w", err)
+		return 0, fmt.Errorf("RunSerializable: %w", err)
 	}
-	// запись статуса в кафку
+	// запись статуса в брокер сообщений
 	err = s.Sender.SendMessage(orderId, user, "new")
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("GetUserIdByOrderId: %w", err)
 	}
 	return orderId, nil
 }
@@ -178,14 +178,17 @@ func (s *Business) OrderPayed(ctx context.Context, orderId orderModels.OrderId) 
 		return err
 	})
 	if err != nil {
-		return fmt.Errorf("order payed: %w", err)
+		return fmt.Errorf("RunSerializable: %w", err)
 	}
 	userId, err := s.GetUserIdByOrderId(ctx, orderId)
 	if err != nil {
-		return fmt.Errorf("cancel order: %w", err)
+		return fmt.Errorf("GetUserIdByOrderId: %w", err)
 	}
-	// запись статуса в кафку
+	// запись статуса в брокер сообщений
 	s.Sender.SendMessage(orderId, userId, "payed")
+	if err != nil {
+		return fmt.Errorf("SendMessage: %w", err)
+	}
 	return nil
 }
 
@@ -208,13 +211,16 @@ func (s *Business) CancelOrder(ctx context.Context, orderId orderModels.OrderId)
 		return err
 	})
 	if err != nil {
-		return fmt.Errorf("cancel order: %w", err)
+		return fmt.Errorf("RunSerializable: %w", err)
 	}
 	userId, err := s.GetUserIdByOrderId(ctx, orderId)
 	if err != nil {
-		return fmt.Errorf("cancel order: %w", err)
+		return fmt.Errorf("GetUserIdByOrderId: %w", err)
 	}
-	// запись статуса в кафку
+	// запись статуса в брокер сообщений
 	s.Sender.SendMessage(orderId, userId, "canceled")
+	if err != nil {
+		return fmt.Errorf("SendMessage: %w", err)
+	}
 	return nil
 }

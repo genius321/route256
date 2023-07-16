@@ -80,7 +80,7 @@ func (r *Repository) ListOrder(
 		Where(sq.Eq{"order_id": orderId})
 	rawSQL, args, err = query.ToSql()
 	if err != nil {
-		return "", 0, nil, fmt.Errorf("build query ListOrder: %s", err)
+		return "", 0, nil, fmt.Errorf("build query ListOrder: %w", err)
 	}
 	var resultSQL []struct {
 		Sku   int64 `db:"sku"`
@@ -110,7 +110,7 @@ func (r *Repository) OrderPayed(ctx context.Context, orderId orderModels.OrderId
 		Where(sq.Eq{"order_id": orderId})
 	rawSQL, args, err := query.ToSql()
 	if err != nil {
-		return fmt.Errorf("build update status_name OrderPayed: %s", err)
+		return fmt.Errorf("build update status_name OrderPayed: %w", err)
 	}
 	_, err = db.Exec(ctx, rawSQL, args...)
 	if err != nil {
@@ -128,7 +128,7 @@ func (r *Repository) CancelOrder(ctx context.Context, orderId orderModels.OrderI
 		Where(sq.Eq{"order_id": orderId})
 	rawSQL, args, err := query.ToSql()
 	if err != nil {
-		return fmt.Errorf("build update status_name CancelOrder: %s", err)
+		return fmt.Errorf("build update status_name CancelOrder: %w", err)
 	}
 	_, err = db.Exec(ctx, rawSQL, args...)
 	if err != nil {

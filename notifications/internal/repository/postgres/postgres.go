@@ -59,7 +59,7 @@ func (r *Repository) SaveNotification(ctx context.Context, orderId, userId int64
 	`
 	_, err := db.Exec(ctx, query, orderId, userId, status)
 	if err != nil {
-		return fmt.Errorf("exec insert SaveNotification: %w", err)
+		return fmt.Errorf("exec insert orderId - %d, userId - %d, status - %s: %w", orderId, userId, status, err)
 	}
 
 	return nil

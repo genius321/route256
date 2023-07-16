@@ -66,9 +66,10 @@ func (consumer *ConsumerGroup) ConsumeClaim(session sarama.ConsumerGroupSession,
 			msg := tgbotapi.NewMessage(457312730, response)
 			consumer.bot.SendMessage(&msg)
 
-			err = consumer.SaveNotification(context.Background(), sm.OrderId, sm.UserId, sm.StatusName)
+			ctx := context.Background()
+			err = consumer.SaveNotification(ctx, sm.OrderId, sm.UserId, sm.StatusName)
 			if err != nil {
-				logger.Error("Consumer group SaveNotification error", err)
+				logger.Errorf(ctx, "SaveNotification", "SaveNotification: %w", err)
 			}
 			logger.Infof("Message claimed: value = %v, timestamp = %v, topic = %s",
 				sm,

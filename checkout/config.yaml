@@ -1,0 +1,8 @@
+grpcPort: 50051
+httpPort: 8080
+serviceName: "CHECKOUT"
+services:
+  loms: "loms:50052"
+  productService: "route256.pavl.uk:8082"
+  pprof: 6060
+rateLimit: 10

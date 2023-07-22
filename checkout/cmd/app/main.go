@@ -25,6 +25,7 @@ import (
 	"github.com/aitsvet/debugcharts"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -36,12 +37,20 @@ var (
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		logger.Fatal("ERR loading .env file")
+	}
+	err = config.Init()
+	if err != nil {
+		logger.Fatal("ERR config.Init: ", err)
+	}
 	flag.Parse()
 	// Init logger for environment
 	logger.SetLoggerByEnvironment(*environment)
 
 	// Init tracer
-	if err := tracer.InitGlobal("CHECKOUT"); err != nil {
+	if err := tracer.InitGlobal(config.AppConfig.ServiceName); err != nil {
 		logger.Fatal(err)
 	}
 
@@ -58,11 +67,11 @@ func main() {
 
 	// up debugcharts server
 	go func() {
-		logger.Info("server Pprof on :6060")
-		logger.Info(http.ListenAndServe(":6060", nil))
+		logger.Info("server Pprof on ", fmt.Sprintf(":%d", config.AppConfig.Services.Pprof))
+		logger.Info(http.ListenAndServe(fmt.Sprintf(":%d", config.AppConfig.Services.Pprof), nil))
 	}()
 
-	connToLoms, err := grpc.Dial(config.AddressLoms,
+	connToLoms, err := grpc.Dial(config.AppConfig.Services.Loms,
 		grpc.WithUnaryInterceptor(metrics.MiddlewareClientGRPC),
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -72,7 +81,7 @@ func main() {
 
 	lomsClient := loms.NewLomsClient(connToLoms)
 
-	connToProduct, err := grpc.Dial(config.AddressProduct,
+	connToProduct, err := grpc.Dial(config.AppConfig.Services.ProductService,
 		grpc.WithUnaryInterceptor(metrics.MiddlewareClientGRPC),
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -91,10 +100,10 @@ func main() {
 
 	provider := tx.New(pool)
 	repo := postgres.New(provider)
-	ratelimiter := ratelimit.New(ctx, config.RateLimit)
+	ratelimiter := ratelimit.New(ctx, config.AppConfig.RateLimit)
 
 	// checkout server setup
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", config.GrpcPort))
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", config.AppConfig.GrpcPort))
 	if err != nil {
 		logger.Fatalf("failed to listen: %v", err)
 	}
@@ -154,7 +163,7 @@ func main() {
 	}
 
 	gwServer := &http.Server{
-		Addr:    fmt.Sprintf(":%d", config.HttpPort),
+		Addr:    fmt.Sprintf(":%d", config.AppConfig.HttpPort),
 		Handler: mux,
 	}
 

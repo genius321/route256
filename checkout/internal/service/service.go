@@ -7,7 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"route256/checkout/internal/config"
+	"os"
 	"route256/checkout/internal/pkg/checkout"
 	"route256/checkout/internal/pkg/loms"
 	"route256/checkout/internal/pkg/product-service"
@@ -143,7 +143,7 @@ func (s *Service) ListCart(ctx context.Context, req *checkout.ListCartRequest) (
 		}
 		eitherCh := wp.Exec(gCtx,
 			&product.GetProductRequest{
-				Token: config.Token,
+				Token: os.Getenv("Token"),
 				Sku:   uint32(v.Sku),
 			},
 			s.productClient.GetProduct,

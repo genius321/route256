@@ -2,19 +2,15 @@
 Проект для мидлов c курсов Ozon'a. Знакомит с внутренней кухней Ozon. Подробнее [route256](https://route256.ozon.ru/)
 
 # Тому, кто хочет потестить мой проект
-Нужно изменить TG_BOT_TOKEN и TG_CHAT в notifications/.env
-make run-all - поднять проект
-make migration-up - накатить миграции
-ещё нужно наполнить данными таблицу sku_stocks сервиса loms
-что-то типо
-insert into sku_stocks("sku", "warehouse_id", "amount") VALUES
-	(5647362, 5, 100),
-	(5647362, 4, 200);
-данные можно взять из [ProductService](http://route256.pavl.uk:8080/docs/)
-grpc ручки для запросов:
-localhost:50001 - checkout
-localhost:50052 - loms
-localhost:50053 - notifications
+- Нужно изменить TG_BOT_TOKEN и TG_CHAT в notifications/.env
+- make run-all - поднять проект
+- make migration-up - накатить миграции
+- Нужно наполнить данными таблицу sku_stocks сервиса loms. Что-то типо insert into sku_stocks("sku", "warehouse_id", "amount") VALUES (5647362, 5, 100), (5647362, 4, 200);
+- Данные можно взять из [ProductService](http://route256.pavl.uk:8080/docs/)
+- grpc ручки для запросов:
+- localhost:50001 - checkout
+- localhost:50052 - loms
+- localhost:50053 - notifications
 
 # Про запушенные секреты
 Учебный проект, ничего такого, если секреты будут знать все

@@ -50,17 +50,19 @@ func NewNotificationService(provider TransactionManager, repo Repository, cache 
 	}
 }
 
-// Позволяет получить историю уведомлений пользователя за указанный промежуток времени.
-// Пример:
-//
-//	{
-//	    "user_id": "1",
-//	    "start_time": "2023-07-15 06:54:11+03",
-//	    "end_time": "2023-07-15 07:23:43+03"
-//	}
-//
-// start_time и end_time строго 22 знака и именно в таком формате
-// +03 - это время относительно UTC, в бд время хранится в timestamptz
+/*
+Позволяет получить историю уведомлений пользователя за указанный промежуток времени.
+Пример:
+
+	{
+	    "user_id": "1",
+	    "start_time": "2023-07-15 06:54:11+03",
+	    "end_time": "2023-07-15 07:23:43+03"
+	}
+
+start_time и end_time строго 22 знака и именно в таком формате
++03 - это время относительно UTC, в бд время хранится в timestamptz
+*/
 func (s *Service) GetHistory(ctx context.Context, req *notifications.GetHistoryRequest) (*notifications.GetHistoryResponse, error) {
 	start := time.Now()
 	logger.Infof("%+v\n", req)

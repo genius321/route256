@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"route256/libs/logger"
 	"route256/notifications/internal/telegram"
+	"strconv"
 
 	"github.com/Shopify/sarama"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -63,10 +65,14 @@ func (consumer *ConsumerGroup) ConsumeClaim(session sarama.ConsumerGroupSession,
 			}
 
 			response := fmt.Sprintf("orderId:%d userId: %d status:%s\n", sm.OrderId, sm.UserId, sm.StatusName)
-			msg := tgbotapi.NewMessage(457312730, response)
+			chatID, err := strconv.ParseInt(os.Getenv("TG_CHAT"), 10, 64)
+			ctx := context.Background()
+			if err != nil {
+				logger.Errorf(ctx, "ParseInt", "retrieve chatID: %w", err)
+			}
+			msg := tgbotapi.NewMessage(chatID, response)
 			consumer.bot.SendMessage(&msg)
 
-			ctx := context.Background()
 			err = consumer.SaveNotification(ctx, sm.OrderId, sm.UserId, sm.StatusName)
 			if err != nil {
 				logger.Errorf(ctx, "SaveNotification", "SaveNotification: %w", err)

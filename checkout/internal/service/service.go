@@ -26,7 +26,7 @@ import (
 
 type TransactionManager interface {
 	RunRepeatableRead(ctx context.Context, fn func(ctxTx context.Context) error) error
-	Serializable(ctx context.Context, fn func(ctxTx context.Context) error) error
+	RunSerializable(ctx context.Context, fn func(ctxTx context.Context) error) error
 }
 
 type Repository interface {

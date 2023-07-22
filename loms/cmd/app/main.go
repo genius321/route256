@@ -9,12 +9,13 @@ import (
 	"os"
 	"route256/libs/logger"
 	"route256/libs/metrics"
+	"route256/libs/postgres/tx"
 	"route256/libs/tracer"
 	"route256/loms/internal/business"
+	"route256/loms/internal/config"
 	"route256/loms/internal/kafka"
 	"route256/loms/internal/pkg/loms"
 	"route256/loms/internal/repository/postgres"
-	"route256/loms/internal/repository/postgres/tx"
 	"route256/loms/internal/service"
 	"route256/loms/internal/status"
 
@@ -26,40 +27,33 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
-const (
-	grpcPort = 50052
-	httpPort = 8081
-)
-
 var (
 	environment = flag.String("environment", "DEVELOPMENT", "environment: [DEVELOPMENT, PRODUCTION]")
 )
 
 func main() {
+	err := config.Init()
+	if err != nil {
+		logger.Fatal("ERR config.Init: ", err)
+	}
 	flag.Parse()
 
 	// Init logger for environment
 	logger.SetLoggerByEnvironment(*environment)
 
 	// Init tracer
-	if err := tracer.InitGlobal("LOMS"); err != nil {
+	if err := tracer.InitGlobal(config.AppConfig.ServiceName); err != nil {
 		logger.Fatal(err)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// kafkaProducer
-	var brokers = []string{
-		"kafka1:29091",
-		"kafka2:29092",
-		"kafka3:29093",
-	}
-	kafkaProducer, err := kafka.NewProducer(brokers)
+	kafkaProducer, err := kafka.NewProducer(config.AppConfig.Brokers)
 	if err != nil {
 		logger.Fatal(err)
 	}
-	statusSender := status.NewKafkaSender(kafkaProducer, "statuses")
+	statusSender := status.NewKafkaSender(kafkaProducer, config.AppConfig.KafkaTopic)
 
 	// connection to db
 	pool, err := pgxpool.Connect(ctx, os.Getenv("LOMS_DATABASE_URL"))
@@ -72,7 +66,7 @@ func main() {
 	repo := postgres.New(provider)
 
 	// loms server setup
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", config.AppConfig.GrpcPort))
 	if err != nil {
 		logger.Fatalf("failed to listen: %v", err)
 	}
@@ -126,7 +120,7 @@ func main() {
 	}
 
 	gwServer := &http.Server{
-		Addr:    fmt.Sprintf(":%d", httpPort),
+		Addr:    fmt.Sprintf(":%d", config.AppConfig.HttpPort),
 		Handler: mux,
 	}
 

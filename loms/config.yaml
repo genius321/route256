@@ -1,0 +1,8 @@
+grpcPort: 50052
+httpPort: 8081
+serviceName: "LOMS"
+brokers:
+  - "kafka1:29091"
+  - "kafka2:29092"
+  - "kafka3:29093"
+kafkaTopic: "statuses"

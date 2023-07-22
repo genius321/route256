@@ -3,8 +3,8 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"route256/libs/postgres/tx"
 	"route256/notifications/internal/pkg/notifications"
-	"route256/notifications/internal/repository/postgres/tx"
 	"time"
 
 	"github.com/georgysavva/scany/pgxscan"

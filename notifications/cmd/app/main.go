@@ -15,11 +15,11 @@ import (
 
 	"route256/libs/cache"
 	"route256/libs/logger"
+	"route256/libs/postgres/tx"
 	"route256/libs/tracer"
 	"route256/notifications/internal/config"
 	"route256/notifications/internal/pkg/notifications"
 	"route256/notifications/internal/repository/postgres"
-	"route256/notifications/internal/repository/postgres/tx"
 	"route256/notifications/internal/service"
 	"route256/notifications/internal/telegram"
 )
@@ -29,7 +29,7 @@ var (
 )
 
 func main() {
-	err := godotenv.Load()
+	err := godotenv.Load("/.env")
 	if err != nil {
 		logger.Fatal("ERR loading .env file")
 	}

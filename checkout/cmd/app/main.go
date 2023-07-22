@@ -13,10 +13,10 @@ import (
 	"route256/checkout/internal/pkg/product-service"
 	"route256/checkout/internal/pkg/ratelimit"
 	"route256/checkout/internal/repository/postgres"
-	"route256/checkout/internal/repository/postgres/tx"
 	"route256/checkout/internal/service"
 	"route256/libs/logger"
 	"route256/libs/metrics"
+	"route256/libs/postgres/tx"
 	"route256/libs/tracer"
 	"time"
 
@@ -37,7 +37,7 @@ var (
 )
 
 func main() {
-	err := godotenv.Load()
+	err := godotenv.Load("/.env")
 	if err != nil {
 		logger.Fatal("ERR loading .env file")
 	}

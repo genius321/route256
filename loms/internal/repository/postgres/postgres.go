@@ -1,7 +1,7 @@
 package postgres
 
 import (
-	"route256/loms/internal/repository/postgres/tx"
+	"route256/libs/postgres/tx"
 
 	sq "github.com/Masterminds/squirrel"
 )
